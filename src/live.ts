@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { useConnectionStore } from './stores/connectionStore';
+import { useTelemetryStore } from './stores/telemetryStore';
 import type { Identity } from './utils/identity';
 import { openTelemetryStream } from './api/sse';
 import { openDispatcherSocket, type DispatcherSocket } from './api/ws';
@@ -22,7 +23,11 @@ export function startLive({ queryClient, identity }: LiveDeps): Live {
   };
 
   const closeStream = openTelemetryStream({
-    onMessage: () => {}, // Stage 3: telemetry pipeline
+    onMessage: (message) => {
+      if (message.type === 'telemetry' || message.type === 'gps_batch') {
+        useTelemetryStore.getState().ingest(message, Date.now());
+      }
+    },
     onStatus: (sse) => useConnectionStore.setState({ sse }),
     onReconnected: () => refetch('fleet', 'routes'),
   });

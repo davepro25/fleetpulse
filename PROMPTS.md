@@ -128,3 +128,34 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 - `loadIdentity` now validates with a zod schema, like everything else, and `Identity` is inferred from it.
 - Removed the unused `random` parameter of `backoffMs` and moved the file to `src/api/` (its only callers are the SSE/WS clients).
 - Removed the `storage` injection parameter: Node 26 has a global `sessionStorage`, so the tests use the real one.
+
+---
+
+## Stage 3: Telemetry pipeline (TDD)
+
+**Prompt (summary):** Build the pure TypeScript pipeline test-first: per-truck ordering by sensor timestamp, `gps_batch` merged into the path only, fuel and speed detectors driven by a per-vehicle profile, and bounded buffers. Then the Zustand store and the `live.ts` wiring.
+
+**TDD loop:** `tests/telemetry.test.ts` was written first and failed (module missing). Then `profiles.ts`, `detectors.ts` and `pipeline.ts` were implemented until all 8 tests passed. The tests feed the **real captured sequences** through the pipeline: truck_8's fuel 0 % glitch, truck_7's stuck 999, a real `gps_batch` and a real out-of-order reading. Synthetic frames are built only from a captured reading, for the cases the capture didn't contain (sustained drop, gradual decline, 200-reading cap).
+
+**Checks that the tests really catch mistakes:**
+
+- A detector hard-coded to `fuel === 0` fails the sustained-drop test, which drops to 3.
+- A hard-coded 80 km/h limit fails the profile test (batch jitter reaches 85).
+- Ordering by arrival fails the out-of-order test.
+- No detector mentions `truck_7` or `0`. Every threshold lives in `profiles.ts`.
+
+**Simplified from the plan, each with a reason:**
+
+- `FuelGuard` dropped: the fuel state fits in `SensorValue` (trusted = `value`, suspect-since = `fault.since`).
+- `buffers.ts` dropped: one private `mergeByTimestamp` covers samples and path.
+- `applySnapshot` dropped: SSE fills every truck within 2 s, and the snapshot is only needed for names.
+- Selectors and `reset()` moved to the stages that first use them.
+
+**Corrected:** my test checked path order with a default `.sort()`, which sorts as strings. Switched to a numeric comparator.
+
+**Verified live in the browser** (by reading the store module from the page):
+
+- 12 trucks in the store.
+- truck_7 reported 999 while in `maintenance`: shown as 0 with `out_of_range`.
+- truck_3 reported fuel 0: still shown as 50.4 with `sudden_drop`.
+- A `gps_batch` for truck_11 grew its path to 21 points while samples stayed at 7.

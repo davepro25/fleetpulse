@@ -347,43 +347,15 @@ type WsOutbound = { type: 'register_dispatcher'; dispatcherId: string; name: str
 **Requirement IDs:** R18, R19, R20, R21, R22, R23, R24, R25
 **Depends on:** S2
 **Time:** build 1.25 h + review 1.0 h
-**Files:**
+**Files:** (as built; simpler than first planned, see the note below)
 
-- `src/domain/telemetry/profiles.ts`: `interface VehicleProfile { minSpeedKmh; maxSpeedKmh; fuelDropSuspectPct; fuelGlitchConfirmMs; lowFuelPct }`; `PROFILES = { truck: { 0, 130, 5, 10_000, 15 } }`; `profileFor(truckId): VehicleProfile` (the API has no vehicle-type field, so everything is `truck`; a new type = a new entry + mapping).
-- `src/domain/telemetry/detectors.ts`: `checkSpeed(prev: SensorValue, raw, ts, p): SensorValue`; `stepFuel(g: FuelGuard, raw, ts, p): { guard: FuelGuard; reading: SensorValue }`; `isLowFuel(fuel, p): boolean`.
-- `src/domain/telemetry/buffers.ts`: `appendCapped<T>(arr, item, cap)`; `mergeByTimestamp<T extends {timestamp:number}>(arr, items, cap)` (sorted, dedupe equal ts, drop oldest).
-- `src/domain/telemetry/pipeline.ts`: `applyTelemetry(fleet, msg: telemetry | gps_batch): FleetLive`; `applySnapshot(fleet, snap): FleetLive`; `BUFFER_CAP = 150`.
-- `src/stores/telemetryStore.ts`: `useTelemetryStore { fleet; lastTelemetryAt; ingest(msg, receivedAt); ingestSnapshot(s); reset() }`; `useTruckIds()` (`useShallow`), `useTruck(id)`.
-- `src/live.ts`: SSE telemetry/gps_batch → `ingest`.
+- `src/domain/telemetry/profiles.ts`: `VehicleProfile`, `PROFILES.truck` (0-130 km/h, drop > 5 % suspect, 10 s confirm, low < 15 %), `profileFor(truckId)`.
+- `src/domain/telemetry/detectors.ts`: `SensorValue { value; fault }`, `checkSpeed(prev, raw, ts, profile)`, `checkFuel(prev, raw, ts, profile)`, `isLowFuel(fuel, profile)`.
+- `src/domain/telemetry/pipeline.ts`: `TruckLive`, `FleetLive`, `applyTelemetry(fleet, telemetry | gps_batch)`, `BUFFER_CAP = 150`; private `mergeByTimestamp` for samples and path.
+- `src/stores/telemetryStore.ts`: `{ fleet, lastTelemetryAt, ingest(message, receivedAt) }`.
+- `src/live.ts`: SSE `telemetry` / `gps_batch` → `ingest`.
 
-```ts
-interface SensorFault {
-  kind: 'out_of_range' | 'sudden_drop';
-  since: number;
-  raw: number;
-}
-interface SensorValue {
-  value: number | null;
-  fault: SensorFault | null;
-} // value = last plausible
-interface FuelGuard {
-  trusted: number | null;
-  suspectSince: number | null;
-}
-interface TruckLive {
-  id;
-  status;
-  location;
-  heading;
-  engineTemp;
-  lastReadingAt: number;
-  speed: SensorValue;
-  fuel: SensorValue;
-  fuelGuard: FuelGuard;
-  samples: Sample[];
-  path: PathPoint[];
-}
-```
+Simplified from the first plan: no `FuelGuard` (the fuel state is fully a `SensorValue`: trusted = `value`, suspect-since = `fault.since`); no `buffers.ts` (one private merge function covers samples and path); no `applySnapshot` (SSE fills every truck within 2 s, the snapshot is used for names only). Selectors (`useTruckIds`, `useTruck`) come with their first reader in S4, `reset()` with `fleet_reset` in S6.
 
 **Algorithm (what the tests pin):**
 
@@ -404,22 +376,20 @@ interface TruckLive {
 
 **Steps (TDD: each test written and seen failing before code):**
 
-- [ ] `buffers.test.ts` → `buffers.ts`.
-- [ ] `detectors.test.ts` (T-3, T-4a, T-4b, T-5, T-14) → `detectors.ts`, `profiles.ts`.
-- [ ] `pipeline.test.ts` (T-1, T-2, T-cap, unknown truck) → `pipeline.ts`.
-- [ ] Store + live wiring; console-log a truck's state to eyeball real data.
+- [ ] `tests/telemetry.test.ts` written first and seen failing.
+- [ ] `profiles.ts`, `detectors.ts`, `pipeline.ts` until green.
+- [ ] Store + live wiring; read the store from the browser to watch real faults.
 
-**Tests** (inputs cloned from fixtures via `reading(overrides)` in `tests/helpers.ts`: real shapes, tuned values):
+**Tests** (`tests/telemetry.test.ts`, 8 cases, driven by the real captured sequences where they exist):
 
-- T-1 `gps_batch: path grows by batch size, sorted; location, lastReadingAt and samples unchanged; still one TruckLive`.
-- T-2 `reading older than lastReadingAt (and equal ts): path gets it in order, current location/speed unchanged`.
-- T-3 `fuel 42,42,0,0,42 @2 s: displayed 42 every step; fault sudden_drop only on the zeros; isLowFuel false throughout`.
-- T-4a `fuel 42 then 0 for 12 s: fault until 10 s, then value 0, fault null, isLowFuel true`.
-- T-4b `fuel 15.10 → 14.95 in 0.05 steps: isLowFuel true on the first reading < 15, no fault ever`.
-- T-5 `speed 50, 999×3, 52: shows 50 with fault since first 999, then 52 clean; first-ever 999 → value null + fault; -3 flagged; 85 accepted`.
-- T-14 `custom profile maxSpeed 40 flags 50: detectors read only the profile`.
-- T-cap `150 cap: 200 readings keep newest 150; a batch older than the window is dropped first`.
-- RF-2 `unknown truck id in telemetry creates an entry`.
+- the real fuel 0 % glitch (truck_8) is never shown and never alerts; the fault is set only on the zero readings.
+- a sustained drop is held as `sudden_drop` for 10 s, then accepted as real and alerts.
+- a gradual decline alerts on the first reading below 15 %, with no fault.
+- the real stuck 999 on truck_7 is flagged `out_of_range`, the last plausible value (0) stays shown, and the chart sample is `null`; the fault clears on the next good reading.
+- speed limits come from the profile (a custom 40 km/h profile flags 50; 85 and the default pass; -0.8 is flagged).
+- a real `gps_batch` only extends the path (one truck, location and samples unchanged, path sorted).
+- a real out-of-order reading enters the path but never becomes current.
+- buffers keep the newest 150 samples and path points.
 
 **Manual verification:** with logging on, wait for truck_7's 999 (≈ 1–2 min) and a fuel 0. Confirm the faults and recovery in the console.
 **DoD:** - [ ] all S3 tests green in `node` env - [ ] no React/Zustand import in the 4 pure files - [ ] every threshold lives in `profiles.ts`.
