@@ -1,0 +1,5 @@
+# The assignment forbids modifying the mock server.
+server.js
+package-lock.json
+tests/fixtures
+docs/assignment.html

@@ -1,36 +1,73 @@
-// SSE GET /api/telemetry/stream (all frames are unnamed `data:` events) and the history endpoint.
-// Debug fields the mock adds (_reordered, _batch*) are deliberately absent: a real sensor
-// would not send them, so nothing may depend on them.
-import type { LatLng, TruckStatus } from './fleet';
+import { z } from 'zod';
+import { LatLngSchema, TruckStatusSchema } from './fleet';
 
-export interface TelemetryReading {
-  truckId: string;
-  location: LatLng;
-  speed: number;
-  heading: number;
-  fuel: number;
-  engineTemp: number;
-  status: TruckStatus;
-  /** Sensor time (server clock). The only valid ordering key, never arrival order. */
-  timestamp: number;
-}
+// z.object strips unknown keys, so the mock's debug flags (_reordered, _batch*) never reach the app.
+export const TelemetryReadingSchema = z.object({
+  truckId: z.string(),
+  location: LatLngSchema,
+  speed: z.number(),
+  heading: z.number(),
+  fuel: z.number(),
+  engineTemp: z.number(),
+  status: TruckStatusSchema,
+  timestamp: z.number(),
+});
+export type TelemetryReading = z.infer<typeof TelemetryReadingSchema>;
 
-export interface SseConnected { type: 'connected'; truckCount: number; timestamp: number }
-export interface SseHeartbeat { type: 'heartbeat'; timestamp: number }
-export interface SseTelemetry { type: 'telemetry'; readings: TelemetryReading[]; timestamp: number }
-/** Buffered past readings for one truck (2-58 s old). Path history only, never "current". */
-export interface SseGpsBatch { type: 'gps_batch'; truckId: string; readings: TelemetryReading[] }
+// Drop only the malformed readings, so one bad sensor can't blank out the other trucks.
+const validReadings = z.array(z.unknown()).transform((items) =>
+  items.flatMap((item) => {
+    const reading = TelemetryReadingSchema.safeParse(item);
+    return reading.success ? [reading.data] : [];
+  }),
+);
 
-export type SseMessage = SseConnected | SseHeartbeat | SseTelemetry | SseGpsBatch;
+const SseConnectedSchema = z.object({
+  type: z.literal('connected'),
+  truckCount: z.number(),
+  timestamp: z.number(),
+});
 
-/** GET /api/telemetry/history/:truckId item. Synthetic: chart seeding only, never the map. */
-export interface HistorySample {
-  truckId: string;
-  location: LatLng;
-  speed: number;
-  fuel: number;
-  engineTemp: number;
-  timestamp: number;
-}
+const SseHeartbeatSchema = z.object({
+  type: z.literal('heartbeat'),
+  timestamp: z.number(),
+});
 
-export interface HistoryResponse { history: HistorySample[]; count: number }
+const SseTelemetrySchema = z.object({
+  type: z.literal('telemetry'),
+  readings: validReadings,
+  timestamp: z.number(),
+});
+
+// Buffered readings 2-58 s old: path history only, never the current position.
+const SseGpsBatchSchema = z.object({
+  type: z.literal('gps_batch'),
+  truckId: z.string(),
+  readings: validReadings,
+});
+
+export const SseMessageSchema = z.discriminatedUnion('type', [
+  SseConnectedSchema,
+  SseHeartbeatSchema,
+  SseTelemetrySchema,
+  SseGpsBatchSchema,
+]);
+export type SseMessage = z.infer<typeof SseMessageSchema>;
+export type SseTelemetry = z.infer<typeof SseTelemetrySchema>;
+export type SseGpsBatch = z.infer<typeof SseGpsBatchSchema>;
+
+// Synthetic data: good for seeding charts, never drawn on the map.
+export const HistorySampleSchema = z.object({
+  truckId: z.string(),
+  location: LatLngSchema,
+  speed: z.number(),
+  fuel: z.number(),
+  engineTemp: z.number(),
+  timestamp: z.number(),
+});
+export type HistorySample = z.infer<typeof HistorySampleSchema>;
+
+export const HistoryResponseSchema = z.object({
+  history: z.array(HistorySampleSchema),
+  count: z.number(),
+});

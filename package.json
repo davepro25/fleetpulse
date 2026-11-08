@@ -9,20 +9,26 @@
   "scripts": {
     "start": "concurrently -k -n server,web -c blue,green \"node server.js\" \"vite\"",
     "test": "tsc --noEmit && vitest run --passWithNoTests",
-    "capture-fixtures": "node scripts/capture-fixtures.mjs"
+    "capture-fixtures": "node scripts/capture-fixtures.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@tanstack/react-query": "^5.107.1",
     "express": "^5.3.0",
+    "ky": "^2.2.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "ws": "^8.22.2"
+    "ws": "^8.22.2",
+    "zod": "^4.6.7",
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.2.1",
     "concurrently": "^10.0.7",
+    "prettier": "^3.9.10",
     "typescript": "^7.0.2",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"

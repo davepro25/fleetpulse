@@ -1,49 +1,64 @@
-// Trucks: REST /api/fleet*, alerts, and the fleet_reset event.
+import { z } from 'zod';
 
-export type TruckStatus = 'active' | 'idle' | 'maintenance';
+export const TruckStatusSchema = z.enum(['active', 'idle', 'maintenance']);
+export type TruckStatus = z.infer<typeof TruckStatusSchema>;
 
-export interface LatLng {
-  lat: number;
-  lng: number;
-}
+export const LatLngSchema = z.object({
+  lat: z.number(),
+  lng: z.number(),
+});
+export type LatLng = z.infer<typeof LatLngSchema>;
 
-/** GET /api/fleet item. No mileage, no lastUpdate. `_version` bumps every sim tick: not a lock. */
-export interface FleetTruck {
-  id: string;
-  name: string;
-  status: TruckStatus;
-  location: LatLng;
-  speed: number;
-  heading: number;
-  fuel: number;
-  engineTemp: number;
-  currentRouteId: string | null;
-  _version: number;
-}
+export const FleetTruckSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: TruckStatusSchema,
+  location: LatLngSchema,
+  speed: z.number(),
+  heading: z.number(),
+  fuel: z.number(),
+  engineTemp: z.number(),
+  currentRouteId: z.string().nullable(),
+  // Bumps on every simulation tick, so it can't be used for locking (route _version is).
+  _version: z.number(),
+});
+export type FleetTruck = z.infer<typeof FleetTruckSchema>;
 
-export interface FleetSnapshot { fleet: FleetTruck[]; timestamp: number }
+export const FleetSnapshotSchema = z.object({
+  fleet: z.array(FleetTruckSchema),
+  timestamp: z.number(),
+});
+export type FleetSnapshot = z.infer<typeof FleetSnapshotSchema>;
 
-/** GET /api/fleet/:truckId: the only source of mileage. */
-export interface TruckDetail extends FleetTruck {
-  mileage: number;
-  lastUpdate: number;
-}
+// GET /api/fleet has no mileage: only the single-truck endpoint does.
+export const TruckDetailSchema = FleetTruckSchema.extend({
+  mileage: z.number(),
+  lastUpdate: z.number(),
+});
+export type TruckDetail = z.infer<typeof TruckDetailSchema>;
 
-/** POST /api/fleet/:truckId/alert response and the truck_alert event payload. */
-export interface TruckAlert {
-  id: string;
-  truckId: string;
+export const TruckAlertSchema = z.object({
+  id: z.string(),
+  truckId: z.string(),
+  message: z.string(),
+  severity: z.string(),
+  sentBy: z.string().optional(),
+  timestamp: z.number(),
+  acknowledged: z.boolean(),
+});
+export type TruckAlert = z.infer<typeof TruckAlertSchema>;
+
+export interface SendAlertRequest {
   message: string;
   severity: string;
-  /** Undefined when the request had no X-Dispatcher-Id (the endpoint does not require it). */
-  sentBy?: string;
-  timestamp: number;
-  acknowledged: boolean;
 }
 
-export interface SendAlertRequest { message: string; severity: string }
+export const WsTruckAlertSchema = z.object({
+  type: z.literal('truck_alert'),
+  alert: TruckAlertSchema,
+});
 
-/** Reaches everyone. */
-export interface WsTruckAlert { type: 'truck_alert'; alert: TruckAlert }
-/** Server state was reset: route ids restart at route_1, positions and versions re-randomised. */
-export interface WsFleetReset { type: 'fleet_reset'; timestamp: number }
+export const WsFleetResetSchema = z.object({
+  type: z.literal('fleet_reset'),
+  timestamp: z.number(),
+});

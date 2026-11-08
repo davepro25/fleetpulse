@@ -1,10 +1,30 @@
-// Dispatcher presence over WebSocket /ws. There is no "list online dispatchers" message.
+import { z } from 'zod';
 
-/** Reply to our register_dispatcher. */
-export interface WsRegistered { type: 'registered'; dispatcherId: string }
-/** Excludes the sender. */
-export interface WsDispatcherJoined { type: 'dispatcher_joined'; dispatcherId: string; name: string; timestamp: number; activeDispatchers: number }
-/** Reaches everyone incl. the sender; 20% arrive 10 s late (quirk 6). timestamp = send time. */
-export interface WsDispatcherLeft { type: 'dispatcher_left'; dispatcherId: string; timestamp: number; activeDispatchers: number }
-/** Excludes the sender. truckId null = viewing nothing. No name field. */
-export interface WsDispatcherViewing { type: 'dispatcher_viewing'; dispatcherId: string; truckId: string | null; timestamp: number }
+// activeDispatchers is left out on purpose: it counts ghosts and is zeroed by reset.
+
+export const WsRegisteredSchema = z.object({
+  type: z.literal('registered'),
+  dispatcherId: z.string(),
+});
+
+export const WsDispatcherJoinedSchema = z.object({
+  type: z.literal('dispatcher_joined'),
+  dispatcherId: z.string(),
+  name: z.string(),
+  timestamp: z.number(),
+});
+
+// 20% arrive 10 s late (quirk 6), and timestamp is the send time, not the disconnect time.
+export const WsDispatcherLeftSchema = z.object({
+  type: z.literal('dispatcher_left'),
+  dispatcherId: z.string(),
+  timestamp: z.number(),
+});
+
+// dispatcherId is null when the sender never registered: such messages are rejected.
+export const WsDispatcherViewingSchema = z.object({
+  type: z.literal('dispatcher_viewing'),
+  dispatcherId: z.string(),
+  truckId: z.string().nullable(),
+  timestamp: z.number(),
+});

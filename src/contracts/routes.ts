@@ -1,40 +1,87 @@
-// Routes: REST /api/routes*, their 409 bodies, and the route_* events.
+import { z } from 'zod';
 
-export type RouteStatus = 'assigned' | 'in-progress' | 'completed' | 'cancelled';
+export const RouteStatusSchema = z.enum(['assigned', 'in-progress', 'completed', 'cancelled']);
+export type RouteStatus = z.infer<typeof RouteStatusSchema>;
 
-export interface Route {
-  id: string;
+export const RouteSchema = z.object({
+  id: z.string(),
+  truckId: z.string(),
+  destination: z.string(),
+  priority: z.string(),
+  notes: z.string(),
+  status: RouteStatusSchema,
+  assignedBy: z.string(),
+  assignedAt: z.number(),
+  lastModifiedBy: z.string().optional(),
+  lastModifiedAt: z.number().optional(),
+  reassignedBy: z.string().optional(),
+  reassignedAt: z.number().optional(),
+  _version: z.number(),
+});
+export type Route = z.infer<typeof RouteSchema>;
+
+export const RoutesResponseSchema = z.object({
+  routes: z.array(RouteSchema),
+  timestamp: z.number(),
+});
+
+export interface CreateRouteRequest {
   truckId: string;
   destination: string;
-  priority: string;
-  notes: string;
-  status: RouteStatus;
-  assignedBy: string;
-  assignedAt: number;
-  lastModifiedBy?: string;
-  lastModifiedAt?: number;
-  reassignedBy?: string;
-  reassignedAt?: number;
-  /** Optimistic-lock version; send as a bare integer in If-Match (server uses parseInt). */
-  _version: number;
+  priority?: string;
+  notes?: string;
 }
 
-export interface RoutesResponse { routes: Route[]; timestamp: number }
+export interface UpdateRouteRequest {
+  status?: RouteStatus;
+  notes?: string;
+  priority?: string;
+}
 
-export interface CreateRouteRequest { truckId: string; destination: string; priority?: string; notes?: string }
-export interface UpdateRouteRequest { status?: RouteStatus; notes?: string; priority?: string }
-export interface ReassignRouteRequest { newTruckId: string }
+export interface ReassignRouteRequest {
+  newTruckId: string;
+}
 
-/** Every error response has at least `error`. */
-export interface ErrorBody { error: string }
-/** POST /api/routes 409: the only conflict body that names the actor correctly. */
-export interface CreateConflictBody extends ErrorBody { currentRouteId: string; assignedBy?: string }
-/** PATCH 409 before the delay. lastModifiedBy ignores reassignedBy, so it can be wrong. */
-export interface VersionConflictBody extends ErrorBody { currentVersion: number; yourVersion: number; lastModifiedBy: string }
-/** PATCH 409 after the delay (quirk 8). No actor at all. */
-export interface ProcessingConflictBody extends ErrorBody { currentVersion: number }
+export const CreateConflictBodySchema = z.object({
+  error: z.string(),
+  currentRouteId: z.string(),
+  assignedBy: z.string().optional(),
+});
 
-// Route events reach everyone, including the dispatcher who made the change.
-export interface WsRouteAssigned { type: 'route_assigned'; route: Route; truckId: string; assignedBy: string; truckVersion: number; timestamp: number }
-export interface WsRouteUpdated { type: 'route_updated'; route: Route; updatedBy: string; timestamp: number }
-export interface WsRouteReassigned { type: 'route_reassigned'; route: Route; oldTruckId?: string; newTruckId: string; reassignedBy: string; timestamp: number }
+// lastModifiedBy ignores reassignedBy (server.js line 300), so after a reassign it names the wrong person.
+export const VersionConflictBodySchema = z.object({
+  error: z.string(),
+  currentVersion: z.number(),
+  yourVersion: z.number(),
+  lastModifiedBy: z.string(),
+});
+
+// Sent after the PATCH delay (quirk 8). Carries no actor at all.
+export const ProcessingConflictBodySchema = z.object({
+  error: z.string(),
+  currentVersion: z.number(),
+});
+
+// Route events are broadcast to everyone, including the dispatcher who made the change.
+export const WsRouteAssignedSchema = z.object({
+  type: z.literal('route_assigned'),
+  route: RouteSchema,
+  assignedBy: z.string(),
+  timestamp: z.number(),
+});
+
+export const WsRouteUpdatedSchema = z.object({
+  type: z.literal('route_updated'),
+  route: RouteSchema,
+  updatedBy: z.string(),
+  timestamp: z.number(),
+});
+
+export const WsRouteReassignedSchema = z.object({
+  type: z.literal('route_reassigned'),
+  route: RouteSchema,
+  oldTruckId: z.string().optional(),
+  newTruckId: z.string(),
+  reassignedBy: z.string(),
+  timestamp: z.number(),
+});
