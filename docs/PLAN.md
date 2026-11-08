@@ -45,7 +45,7 @@
 16. `activeDispatchers` (s485, s517) counts ghosts and is zeroed by reset. It is not displayed.
 
 ## Global constraints
-- **`server.js` is read-only for the whole project** (spec: "Do NOT modify the mock server"). Byte-identical to the spec's code block (HTML entities decoded), guarded by a hash test. No edits, no reformatting, no rename, no `.cjs` copy, no wrapper that patches its behaviour, and `npm audit fix`/formatters must exclude it (`.prettierignore`). If any requirement seems to need a server change: **STOP and ask the owner**; the fix belongs in the client. Every stage's DoD includes `git diff --quiet <S0 commit> -- server.js` (exit 0) and the hash test passing.
+- **`server.js` is read-only for the whole project** (spec: "Do NOT modify the mock server"). Byte-identical to the spec's code block (HTML entities decoded); `.gitattributes` marks it `-text` so checkouts never convert its line endings. No edits, no reformatting, no rename, no `.cjs` copy, no wrapper that patches its behaviour, and `npm audit fix`/formatters must exclude it (`.prettierignore`). If any requirement seems to need a server change: **STOP and ask the owner**; the fix belongs in the client. Every stage's DoD includes `git diff --quiet <S0 commit> -- server.js` (exit 0).
 - `npm install && npm start` starts server + client. `npm test` = typecheck + all tests, green after every stage.
 - Latest Chrome only, no polyfills.
 - No bonus features (circuit breaker included). No dependency for a few lines.
@@ -67,9 +67,9 @@ Sources: **BR** = Basic Requirements · **TR** = Technical Req. · **EV** = Eval
 
 | ID | Requirement | Source | Stage | Verified by |
 |---|---|---|---|---|
-| R01 | Server code copied byte-for-byte; repo is a git repo | SUB1, SUB4, mock warning | S0 | `server.js hash matches spec` (S1 test) |
+| R01 | Server code copied byte-for-byte; repo is a git repo | SUB1, SUB4, mock warning | S0 | `git diff --quiet <S0 commit> -- server.js` in every stage's DoD |
 | R02 | Real captured fixtures for every SSE/WS/REST shape incl. quirks | B | S0 | fixture files exist; later tests import them |
-| R03 | TS strict + React + Vite; latest Chrome, no polyfills | TR | S1 | `tsc -b` inside `npm test` |
+| R03 | TS strict + React + Vite; latest Chrome, no polyfills | TR | S1 | `tsc --noEmit` inside `npm test` |
 | R04 | `npm install && npm start` runs server + client (CJS server: no `"type":"module"`) | TR, SUB5, s1–4 | S1 | M: fresh clone on Windows |
 | R05 | `npm test` runs all and passes | TR, SUB6 | S1 | M |
 | R06 | Same-origin proxy for `/api` and `/ws` (Retry-After readable) | s9–16 | S1 | M: devtools shows header read; T-6 |
@@ -145,13 +145,13 @@ Sources: **BR** = Basic Requirements · **TR** = Technical Req. · **EV** = Eval
 
 **Steps:**
 - [ ] `git init`; `npm init -y`; `npm i express ws`.
-- [ ] Extract `server.js`; `node --check server.js`; record `sha256` for the S1 test.
+- [ ] Extract `server.js`; `node --check server.js`; note its `sha256` in PROMPTS.md.
 - [ ] Script, SSE (fetch stream): keep the first `connected`, `heartbeat` (wait ≥ 15 s), `telemetry`, `gps_batch`, a telemetry with any `fuel === 0`, one with `speed === 999`, one with a reading older than the message timestamp. Stop when all are captured (≤ ~3 min).
 - [ ] Script, REST: `GET /api/fleet` until one 503 (store status, `Retry-After`, body) and one 200; `GET /api/fleet/truck_1`; `GET /api/telemetry/history/truck_1?limit=5`; POST route without header (401), without destination (400), unknown truck (404), twice on the same truck (409); PATCH with stale If-Match (409 version); PATCH with current If-Match, then PUT reassign during its delay (409 processing); reassign to busy (409) and to `truck_7` (400); alert (201).
 - [ ] Script, WS: two `ws` clients A, B. Capture `registered`, `dispatcher_joined`, `dispatcher_viewing`, `pong`, `error` (send `"x"`), route events (from the REST step), `truck_alert`, `fleet_reset` (POST reset last). Loop: B registers, closes; record ms until A gets `dispatcher_left`; repeat until one arrives ≥ 9 s late (save with `closedAt`/`receivedAt`).
 - [ ] Diff the captures against the matrix; fix any row they contradict; note the differences for PROMPTS.md.
 
-**Tests:** none (no app code). The hash test lands in S1.
+**Tests:** none (no app code).
 **Manual verification:** open `/api/telemetry/stream` in Chrome and watch a `gps_batch` arrive right before a `telemetry`. Check the delayed-leave fixture shows ≈ 10 s.
 **Definition of done:** - [ ] all keys present in the 3 fixture files - [ ] delayed leave captured - [ ] matrix updated - [ ] `server.js` hash noted.
 **Explain-back:** 1. Why does a batch's newest point trail the live reading by 2 s? 2. Which 409 has no actor, and why? 3. Why can't the browser read `Retry-After` from :3000? 4. What does the out-of-order reading actually contain?
@@ -168,17 +168,17 @@ Sources: **BR** = Basic Requirements · **TR** = Technical Req. · **EV** = Eval
 **Depends on:** S0
 **Time:** build 0.75 h + review 0.75 h
 **Files:**
-- `package.json`: scripts `start: concurrently -k -n server,web "node server.js" "vite"`, `test: tsc -b && vitest run`; **no** `"type"`.
+- `package.json`: scripts `start: concurrently -k -n server,web "node server.js" "vite"`, `test: tsc --noEmit && vitest run --passWithNoTests`; **no** `"type"`.
 - `vite.config.mts`: react plugin; proxy `/api` → `http://localhost:3000`, `/ws` → `ws://localhost:3000` (`ws: true`); `test.environment: 'node'`.
-- `tsconfig*.json`: `strict`, `noUncheckedIndexedAccess`, `resolveJsonModule`.
+- `tsconfig.json`: one config, `include: ["src"]`, `types: ["vite/client"]` only (no Node types, so browser code cannot import `node:*`); `strict`, `noUncheckedIndexedAccess`, `resolveJsonModule`.
+- `.gitattributes`: `server.js -text`.
 - `index.html`, `src/main.tsx` (QueryClientProvider), `src/App.tsx` (empty panel layout).
-- `src/contracts.ts`: every wire type (below).
-- `src/test/serverUnchanged.test.ts`: sha256 of `server.js` equals the S0 constant.
+- `src/contracts/{fleet,telemetry,routes,presence,ws}.ts` + `index.ts`: every wire type (below), split by domain; `ws.ts` holds the cross-domain WS unions.
 - `README.md`: setup + architecture diagram + decision log (draft). `PROMPTS.md`: journal started. `.gitignore`.
 
 **Folder map** (by responsibility; each later stage fills one folder):
 ```
-src/contracts.ts       wire types           src/live.ts        composition root: transports → reducers/stores/cache
+src/contracts/         wire types           src/live.ts        composition root: transports → reducers/stores/cache
 src/transport/         guards, http, sse, ws, backoff, identity, connectionStore, AppContext, IdentityGate
 src/telemetry/         profiles, detectors, buffers, pipeline (pure) + store (Zustand)
 src/fleet/             queries, FleetMap, TruckMarker, TruckList, SensorReadout, ConnectionBanner, statusStyle
@@ -250,16 +250,16 @@ type WsOutbound = { type: 'register_dispatcher'; dispatcherId: string; name: str
 
 **Steps:**
 - [ ] `npm create vite@latest . -- --template react-ts`; remove `"type"`; rename config to `vite.config.mts`.
-- [ ] `npm i @tanstack/react-query zustand leaflet react-leaflet recharts`; `npm i -D concurrently vitest jsdom @testing-library/react @types/leaflet`.
+- [ ] `npm i react react-dom @tanstack/react-query`; `npm i -D vite @vitejs/plugin-react typescript @types/react @types/react-dom vitest concurrently`. Each later stage installs only what it first uses (S2 `zustand`; S4 `leaflet react-leaflet` + `-D @types/leaflet jsdom @testing-library/react`; S7 `recharts`).
 - [ ] Proxy + vitest config; tsconfig flags.
-- [ ] Write `contracts.ts`, the hash test, README draft with diagram + decision log.
+- [ ] Write `src/contracts/`, README draft with diagram + decision log.
 - [ ] `npm test` green; `npm start` serves the empty layout and `http://localhost:5173/api/fleet` returns JSON.
 
-**Tests:** `server.js hash matches spec`: protects R01 for the whole project.
+**Tests:** none yet (`--passWithNoTests`); `tsc --noEmit` is the S1 gate.
 **Manual verification:** delete `node_modules`, `npm install && npm start` on Windows; both processes up; Ctrl+C kills both.
 **DoD:** - [ ] tsc strict clean - [ ] proxy works for `/api` - [ ] decision log in README - [ ] no feature code.
 **Explain-back:** 1. Why must `package.json` omit `"type"`? 2. Why is the proxy a correctness requirement, not convenience? 3. Which modules may import React, and why does the vitest default environment enforce it? 4. Defend guards over zod. 5. Where would a new data source plug in?
-**Self-quiz:** `anthropic-skills:architecture-explain` quiz on `package.json`, `vite.config.mts`, `src/contracts.ts`, README diagram.
+**Self-quiz:** `anthropic-skills:architecture-explain` quiz on `package.json`, `vite.config.mts`, `src/contracts/`, README diagram.
 **PROMPTS.md:** scaffold prompt; whether the AI proposed `"type":"module"` or direct :3000 calls, and the correction.
 **Commit:** `chore: scaffold vite react-ts with proxy, contracts and decision log`
 **STOP — wait for review.**
@@ -292,6 +292,7 @@ type WsOutbound = { type: 'register_dispatcher'; dispatcherId: string; name: str
 - Invalid messages are dropped and counted (`console.warn` once per type), never thrown into React.
 
 **Steps:**
+- [ ] `npm i zustand` (connectionStore).
 - [ ] Write guard tests from fixtures (fail) → implement guards → pass.
 - [ ] Write http + retry tests (fail) → implement → pass.
 - [ ] Write SSE/WS lifecycle tests with fake `EventSource`/`WebSocket` (`vi.stubGlobal`) and fake timers → implement → pass.
@@ -400,6 +401,7 @@ interface TruckLive { id; status; location; heading; engineTemp; lastReadingAt: 
 - The path is drawn for the selected truck only: 12 polylines add nothing and the batch path is jitter.
 
 **Steps:**
+- [ ] `npm i leaflet react-leaflet`; `npm i -D @types/leaflet jsdom @testing-library/react`.
 - [ ] ErrorBoundary + useNow → map → list → readout → banner → App layout.
 - [ ] Profile with React DevTools for 60 s.
 
@@ -537,7 +539,7 @@ interface TruckLive { id; status; location; heading; engineTemp; lastReadingAt: 
 - The alert list is fed only by WS (own echo included). Rejected: merging the POST result too, which would need a second dedupe path.
 - Mileage fetched on open, no refetch interval (static in the sim).
 
-**Steps:** - [ ] T-seed → `seedSamples` - [ ] T-alert → `validateAlert` - [ ] queries + panel + charts + form, inside an ErrorBoundary.
+**Steps:** - [ ] `npm i recharts` - [ ] T-seed → `seedSamples` - [ ] T-alert → `validateAlert` - [ ] queries + panel + charts + form, inside an ErrorBoundary.
 **Tests:**
 - T-seed `history older than live samples is prepended in order, duplicates by ts skipped, total ≤ 150, path untouched`.
 - T-alert `validateAlert trims; rejects empty, 201 chars, severity "urgent"`.

@@ -17,7 +17,7 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 - "Refetch the route": there is no single-route GET, only `GET /api/routes`.
 
 **What I rejected / added:**
-- I added an explicit rule that `server.js` is read-only for the whole project (hash test + `git diff` check in every stage's definition of done). The assignment forbids modifying it.
+- I added an explicit rule that `server.js` is read-only for the whole project (`git diff` check in every stage's definition of done). The assignment forbids modifying it.
 
 ---
 
@@ -55,3 +55,27 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 **Notes for later stages:** fixtures contain the debug fields `_reordered`/`_batch*`, so guards must ignore extra fields. Telemetry statuses in `sse.json` reflect the route actions the script made in parallel (truck_1 is `idle` after being reassigned away). That is expected.
 
 **What I corrected in the AI's script before running it:** removed a leftover no-op `waitFor` call and a duplicate `route_updated` capture (the first `route_updated` already is A's own echo).
+
+---
+
+## Stage 1: Architecture & scaffold
+
+**Prompt (summary):** Scaffold Vite + React + TS strict + Vitest so that `npm start` runs the unchanged server and the client together. Write the wire contracts, the README architecture/decision log, and a test that guards `server.js`.
+
+**Output:** a hand-written minimal scaffold instead of `npm create vite`, plus the wire contracts, a same-origin proxy in `vite.config.mts`, and the README draft.
+
+**Corrected / rejected:**
+- Rejected the Vite template. It refuses to scaffold into a non-empty folder, adds `"type": "module"` (which would crash the CommonJS `server.js`) and brings ESLint and demo assets nobody asked for. Writing the few needed files by hand was smaller.
+- `npm init` had added `"type": "commonjs"`. I removed the field entirely, as the plan says.
+- Found a risk the plan missed: this machine has `core.autocrlf=true`, so a Windows checkout would rewrite `server.js` with CRLF and change its bytes. Added `.gitattributes`.
+- Used `tsc --noEmit` with a single `tsconfig.json` instead of `tsc -b` with project references. One config is enough here.
+
+**Verified:** `npm test` is green (typecheck). A smoke script started `npm start` and confirmed the app is served on :5173 and, through the proxy: `/api/fleet` 200, a 503 with a readable `Retry-After: 3`, an SSE `connected` frame and a WS `ping` → `pong`. Both ports were freed afterwards.
+
+**Changed after my review:** I found the single 150-line `src/contracts.ts` hard to read and asked why it wasn't split into a `types/` folder per page with an `index.ts`. The AI agreed to split it but argued against splitting **per page**: `Route` is used by the routes panel, the detail panel, WS events and the audit log, so a per-page split forces an arbitrary owner or duplicates types. We split **by domain** instead: `src/contracts/{fleet,telemetry,routes,presence}.ts` + `ws.ts` (the cross-domain WS unions) + `index.ts` (`export type *`). Domain files import each other directly, never through the index, so there are no barrel cycles. Imports stay `from '../contracts'`.
+
+**Changed after my review: leaner.**
+- I rejected the AI's `server.js` sha256 test as over-engineering. `git diff --quiet <S0 commit> -- server.js` in every stage's definition of done already guards the file.
+- I narrowed `.gitattributes` from `* text=auto eol=lf` (every file) to `server.js -text`. Only the server has to stay byte-identical.
+- With the hash test gone, nothing in `src` needs Node. The AI had proposed splitting the tsconfig into app/node configs. Instead I removed `@types/node` and kept one `tsconfig.json` that covers `src` only with `vite/client` types. A `node:fs` import in browser code now fails typecheck (verified with a probe file).
+- I uninstalled libraries no stage uses yet (zustand, leaflet, react-leaflet, recharts, jsdom, RTL, the type packages). Each stage now installs what it first uses, so every commit's `package.json` diff matches its code.

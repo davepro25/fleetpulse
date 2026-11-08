@@ -1,0 +1,17 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; color: #172b4d; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  grid-template-rows: auto 1fr 320px;
+  grid-template-areas:
+    'banner banner'
+    'map side'
+    'detail side';
+  height: 100vh;
+}
+.banner { grid-area: banner; padding: 8px 16px; border-bottom: 1px solid #dfe1e6; }
+.map-panel { grid-area: map; min-height: 0; }
+.side-panel { grid-area: side; overflow-y: auto; border-left: 1px solid #dfe1e6; }
+.detail-panel { grid-area: detail; overflow-y: auto; border-top: 1px solid #dfe1e6; }

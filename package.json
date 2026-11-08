@@ -1,20 +1,30 @@
 {
-  "name": "scratch-2026-11-08-dcc00d",
+  "name": "fleetpulse",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
+  "private": true,
+  "description": "Real-time fleet management dashboard (home assignment)",
+  "engines": {
+    "node": ">=20"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "concurrently -k -n server,web -c blue,green \"node server.js\" \"vite\"",
+    "test": "tsc --noEmit && vitest run --passWithNoTests",
+    "capture-fixtures": "node scripts/capture-fixtures.mjs"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
+    "@tanstack/react-query": "^5.107.1",
     "express": "^5.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "ws": "^8.22.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "concurrently": "^10.0.7",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
   }
 }

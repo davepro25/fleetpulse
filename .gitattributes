@@ -1,0 +1,2 @@
+# server.js must stay byte-identical to the assignment: never convert its line endings on checkout.
+server.js -text
