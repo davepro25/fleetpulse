@@ -1,0 +1,171 @@
+{
+  "registered": {
+    "type": "registered",
+    "dispatcherId": "Dana~aaaa1111"
+  },
+  "dispatcher_joined": {
+    "type": "dispatcher_joined",
+    "dispatcherId": "Eli~bbbb2222",
+    "name": "Eli",
+    "timestamp": 1794170244710,
+    "activeDispatchers": 2
+  },
+  "dispatcher_viewing": {
+    "type": "dispatcher_viewing",
+    "dispatcherId": "Eli~bbbb2222",
+    "truckId": "truck_3",
+    "timestamp": 1794170244735
+  },
+  "dispatcher_viewing_null": {
+    "type": "dispatcher_viewing",
+    "dispatcherId": "Eli~bbbb2222",
+    "truckId": null,
+    "timestamp": 1794170244758
+  },
+  "pong": {
+    "type": "pong",
+    "timestamp": 1794170244782
+  },
+  "error": {
+    "type": "error",
+    "message": "Invalid JSON"
+  },
+  "dispatcher_viewing_unregistered": {
+    "type": "dispatcher_viewing",
+    "dispatcherId": null,
+    "truckId": "truck_5",
+    "timestamp": 1794170244843
+  },
+  "route_assigned": {
+    "type": "route_assigned",
+    "route": {
+      "id": "route_1",
+      "truckId": "truck_1",
+      "destination": "Dizengoff 50, Tel Aviv",
+      "priority": "high",
+      "notes": "fragile",
+      "status": "assigned",
+      "assignedBy": "Dana~aaaa1111",
+      "assignedAt": 1794170244917,
+      "_version": 1
+    },
+    "truckId": "truck_1",
+    "assignedBy": "Dana~aaaa1111",
+    "truckVersion": 2,
+    "timestamp": 1794170244917
+  },
+  "route_reassigned": {
+    "type": "route_reassigned",
+    "route": {
+      "id": "route_1",
+      "truckId": "truck_4",
+      "destination": "Dizengoff 50, Tel Aviv",
+      "priority": "high",
+      "notes": "fragile",
+      "status": "assigned",
+      "assignedBy": "Dana~aaaa1111",
+      "assignedAt": 1794170244917,
+      "_version": 2,
+      "reassignedBy": "Eli~bbbb2222",
+      "reassignedAt": 1794170244990
+    },
+    "oldTruckId": "truck_1",
+    "newTruckId": "truck_4",
+    "reassignedBy": "Eli~bbbb2222",
+    "timestamp": 1794170244990
+  },
+  "route_updated": {
+    "type": "route_updated",
+    "route": {
+      "id": "route_1",
+      "truckId": "truck_4",
+      "destination": "Dizengoff 50, Tel Aviv",
+      "priority": "high",
+      "notes": "fragile",
+      "status": "in-progress",
+      "assignedBy": "Dana~aaaa1111",
+      "assignedAt": 1794170244917,
+      "_version": 3,
+      "reassignedBy": "Eli~bbbb2222",
+      "reassignedAt": 1794170244990,
+      "lastModifiedBy": "Dana~aaaa1111",
+      "lastModifiedAt": 1794170246229
+    },
+    "updatedBy": "Dana~aaaa1111",
+    "timestamp": 1794170246229
+  },
+  "truck_alert": {
+    "type": "truck_alert",
+    "alert": {
+      "id": "5ca69e1f-b082-40d0-8c41-beeadf0fc4ff",
+      "truckId": "truck_1",
+      "message": "Check tyre pressure",
+      "severity": "warning",
+      "sentBy": "Dana~aaaa1111",
+      "timestamp": 1794170246243,
+      "acknowledged": false
+    }
+  },
+  "ghostAttempts": [
+    {
+      "attempt": 1,
+      "delayMs": 3
+    },
+    {
+      "attempt": 2,
+      "delayMs": 10015
+    }
+  ],
+  "dispatcher_left": {
+    "type": "dispatcher_left",
+    "dispatcherId": "Eli~bbbb2222",
+    "timestamp": 1794170246246,
+    "activeDispatchers": 1
+  },
+  "ghostLeaveAfterReconnect": {
+    "closedAt": 1794170246265,
+    "observerLog": [
+      {
+        "receivedAt": 1794170246269,
+        "msg": {
+          "type": "dispatcher_joined",
+          "dispatcherId": "Eli~bbbb2222",
+          "name": "Eli",
+          "timestamp": 1794170246272,
+          "activeDispatchers": 2
+        }
+      },
+      {
+        "receivedAt": 1794170256280,
+        "msg": {
+          "type": "dispatcher_left",
+          "dispatcherId": "Eli~bbbb2222",
+          "timestamp": 1794170256282,
+          "activeDispatchers": 1
+        }
+      }
+    ],
+    "reconnectedClientLog": [
+      {
+        "receivedAt": 1794170246269,
+        "msg": {
+          "type": "registered",
+          "dispatcherId": "Eli~bbbb2222"
+        }
+      },
+      {
+        "receivedAt": 1794170256280,
+        "msg": {
+          "type": "dispatcher_left",
+          "dispatcherId": "Eli~bbbb2222",
+          "timestamp": 1794170256282,
+          "activeDispatchers": 1
+        }
+      }
+    ]
+  },
+  "fleet_reset": {
+    "type": "fleet_reset",
+    "timestamp": 1794170256311
+  }
+}

@@ -1,0 +1,673 @@
+{
+  "fleet200": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "2960",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"b90-keNlPHLo1+lP4V0/Fi5b07Zz+4w\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "fleet": [
+        {
+          "id": "truck_1",
+          "name": "Truck Alpha",
+          "status": "active",
+          "location": {
+            "lat": 32.10542348439849,
+            "lng": 34.7818
+          },
+          "speed": 0,
+          "heading": 218.32812184476614,
+          "fuel": 55.05051087501085,
+          "engineTemp": 89.79772044054044,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_2",
+          "name": "Truck Bravo",
+          "status": "active",
+          "location": {
+            "lat": 32.11690496063751,
+            "lng": 34.800047132531795
+          },
+          "speed": 0,
+          "heading": 229.70799353431943,
+          "fuel": 67.08475880575745,
+          "engineTemp": 75.17217429158603,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_3",
+          "name": "Truck Charlie",
+          "status": "active",
+          "location": {
+            "lat": 32.10430429168518,
+            "lng": 34.814716398760595
+          },
+          "speed": 0,
+          "heading": 327.10645518476355,
+          "fuel": 53.82972186012026,
+          "engineTemp": 88.05427277264457,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_4",
+          "name": "Truck Delta",
+          "status": "idle",
+          "location": {
+            "lat": 32.0853,
+            "lng": 34.8244971026249
+          },
+          "speed": 0,
+          "heading": 54.24206076776757,
+          "fuel": 94.78817277298232,
+          "engineTemp": 89.08699376535627,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_5",
+          "name": "Truck Echo",
+          "status": "active",
+          "location": {
+            "lat": 32.07284575579455,
+            "lng": 34.8033713837337
+          },
+          "speed": 0,
+          "heading": 201.44245677433852,
+          "fuel": 86.03835067670245,
+          "engineTemp": 87.91049603066388,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_6",
+          "name": "Truck Foxtrot",
+          "status": "active",
+          "location": {
+            "lat": 32.0472502505935,
+            "lng": 34.80376803306243
+          },
+          "speed": 0,
+          "heading": 300.15692336828585,
+          "fuel": 44.22672710767379,
+          "engineTemp": 83.15647028635058,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_7",
+          "name": "Truck Golf",
+          "status": "maintenance",
+          "location": {
+            "lat": 32.06010165504813,
+            "lng": 34.7818
+          },
+          "speed": 0,
+          "heading": 209.7096233434569,
+          "fuel": 47.640992125538574,
+          "engineTemp": 86.4745148815277,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_8",
+          "name": "Truck Hotel",
+          "status": "active",
+          "location": {
+            "lat": 32.04871626742542,
+            "lng": 34.7606783721501
+          },
+          "speed": 0,
+          "heading": 50.50728039917566,
+          "fuel": 63.42945558931191,
+          "engineTemp": 84.57970581223613,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_9",
+          "name": "Truck India",
+          "status": "active",
+          "location": {
+            "lat": 32.06590988416155,
+            "lng": 34.74821533420317
+          },
+          "speed": 0,
+          "heading": 15.25409505648945,
+          "fuel": 93.73053036511608,
+          "engineTemp": 78.27926990615174,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_10",
+          "name": "Truck Juliet",
+          "status": "idle",
+          "location": {
+            "lat": 32.0853,
+            "lng": 34.73677933497023
+          },
+          "speed": 0,
+          "heading": 285.3681185716953,
+          "fuel": 90.38937764157606,
+          "engineTemp": 78.45499117578848,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_11",
+          "name": "Truck Kilo",
+          "status": "active",
+          "location": {
+            "lat": 32.10726873257158,
+            "lng": 34.743749039008115
+          },
+          "speed": 0,
+          "heading": 306.94014705088006,
+          "fuel": 73.51841515358525,
+          "engineTemp": 82.28013534195765,
+          "currentRouteId": null,
+          "_version": 1
+        },
+        {
+          "id": "truck_12",
+          "name": "Truck Lima",
+          "status": "active",
+          "location": {
+            "lat": 32.12850824569961,
+            "lng": 34.756853707714114
+          },
+          "speed": 0,
+          "heading": 137.34732342984432,
+          "fuel": 73.5695671172114,
+          "engineTemp": 89.03978226917616,
+          "currentRouteId": null,
+          "_version": 1
+        }
+      ],
+      "timestamp": 1794170244875
+    }
+  },
+  "fleet503": {
+    "status": 503,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "36",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"24-Du2Xgkjq2RTiSIh4PPOHqqZBBc0\"",
+      "keep-alive": "timeout=5",
+      "retry-after": "3",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "Service under heavy load"
+    }
+  },
+  "truckDetail": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "279",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"117-SvxcubUmAHMPLgKwPNSVTKqGXRE\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "id": "truck_1",
+      "name": "Truck Alpha",
+      "status": "active",
+      "location": {
+        "lat": 32.10542348439849,
+        "lng": 34.7818
+      },
+      "speed": 0,
+      "heading": 218.32812184476614,
+      "fuel": 55.05051087501085,
+      "engineTemp": 89.79772044054044,
+      "mileage": 65211,
+      "lastUpdate": 1794170244579,
+      "currentRouteId": null,
+      "_version": 1
+    }
+  },
+  "truckDetail404": {
+    "status": 404,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "27",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"1b-LHMo7jWpn23h5ugIkqOLq2KBrXA\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "Truck not found"
+    }
+  },
+  "history": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "947",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"3b3-a+h0dNEY0n/sii0wvu2ovommwjU\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "history": [
+        {
+          "truckId": "truck_1",
+          "location": {
+            "lat": 32.10419402705019,
+            "lng": 34.78379170896392
+          },
+          "speed": 0,
+          "fuel": 55.15051087501085,
+          "engineTemp": 87.60475258978076,
+          "timestamp": 1794170234894
+        },
+        {
+          "truckId": "truck_1",
+          "location": {
+            "lat": 32.10709904428654,
+            "lng": 34.78166680301269
+          },
+          "speed": 8.814560588015949,
+          "fuel": 55.13051087501085,
+          "engineTemp": 90.49314151635106,
+          "timestamp": 1794170236894
+        },
+        {
+          "truckId": "truck_1",
+          "location": {
+            "lat": 32.10656318051021,
+            "lng": 34.78279577122929
+          },
+          "speed": 0,
+          "fuel": 55.11051087501085,
+          "engineTemp": 88.89049558279376,
+          "timestamp": 1794170238894
+        },
+        {
+          "truckId": "truck_1",
+          "location": {
+            "lat": 32.10470795907221,
+            "lng": 34.78148587505907
+          },
+          "speed": 9.237872929327764,
+          "fuel": 55.09051087501085,
+          "engineTemp": 89.31214484982132,
+          "timestamp": 1794170240894
+        },
+        {
+          "truckId": "truck_1",
+          "location": {
+            "lat": 32.10558661203403,
+            "lng": 34.78188607415186
+          },
+          "speed": 9.352078256736789,
+          "fuel": 55.070510875010854,
+          "engineTemp": 87.83405210234457,
+          "timestamp": 1794170242894
+        }
+      ],
+      "count": 5
+    }
+  },
+  "createRoute401": {
+    "status": 401,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "43",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"2b-hdXEVkoitMrM8pyQKCchRbxg9R4\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "X-Dispatcher-Id header required"
+    }
+  },
+  "createRoute400": {
+    "status": 400,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "44",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"2c-AFZmsvdEpDJ/5l32AiWK5muYtjg\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "truckId and destination required"
+    }
+  },
+  "createRoute404": {
+    "status": 404,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "27",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"1b-LHMo7jWpn23h5ugIkqOLq2KBrXA\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "Truck not found"
+    }
+  },
+  "createRoute201": {
+    "status": 201,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "200",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"c8-wANDwhs5nZbHIBescVOWW6r6fbE\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "id": "route_1",
+      "truckId": "truck_1",
+      "destination": "Dizengoff 50, Tel Aviv",
+      "priority": "high",
+      "notes": "fragile",
+      "status": "assigned",
+      "assignedBy": "Dana~aaaa1111",
+      "assignedAt": 1794170244917,
+      "_version": 1
+    }
+  },
+  "createRoute409": {
+    "status": 409,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "90",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"5a-19zhXZCye/n110CPM9SX2zVLsfY\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "Truck already assigned",
+      "currentRouteId": "route_1",
+      "assignedBy": "Dana~aaaa1111"
+    }
+  },
+  "reassign200": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "259",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:24 GMT",
+      "etag": "W/\"103-NQ/nJwDJV54fi5Qv0HUTN/Or29Y\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "id": "route_1",
+      "truckId": "truck_4",
+      "destination": "Dizengoff 50, Tel Aviv",
+      "priority": "high",
+      "notes": "fragile",
+      "status": "assigned",
+      "assignedBy": "Dana~aaaa1111",
+      "assignedAt": 1794170244917,
+      "_version": 2,
+      "reassignedBy": "Eli~bbbb2222",
+      "reassignedAt": 1794170244990
+    }
+  },
+  "patch409Processing": {
+    "status": 409,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "67",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:25 GMT",
+      "etag": "W/\"43-qSLns3hkevlhJHrOvtS6LOY//wQ\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "Route was modified during processing",
+      "currentVersion": 2
+    }
+  },
+  "patch409Version": {
+    "status": 409,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "120",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:25 GMT",
+      "etag": "W/\"78-ev3/MlGJv0NE63klUuFhVkd3XEY\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "Route was modified by another dispatcher",
+      "currentVersion": 2,
+      "yourVersion": 1,
+      "lastModifiedBy": "Dana~aaaa1111"
+    }
+  },
+  "routesAfterReassign": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "298",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:25 GMT",
+      "etag": "W/\"12a-foG1x50OPqbX/tatgyYv0kq2VA4\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "routes": [
+        {
+          "id": "route_1",
+          "truckId": "truck_4",
+          "destination": "Dizengoff 50, Tel Aviv",
+          "priority": "high",
+          "notes": "fragile",
+          "status": "assigned",
+          "assignedBy": "Dana~aaaa1111",
+          "assignedAt": 1794170244917,
+          "_version": 2,
+          "reassignedBy": "Eli~bbbb2222",
+          "reassignedAt": 1794170244990
+        }
+      ],
+      "timestamp": 1794170245754
+    }
+  },
+  "patch200": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "326",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:26 GMT",
+      "etag": "W/\"146-dAsmoDmrcz9fngSojf95pvkjzqM\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "id": "route_1",
+      "truckId": "truck_4",
+      "destination": "Dizengoff 50, Tel Aviv",
+      "priority": "high",
+      "notes": "fragile",
+      "status": "in-progress",
+      "assignedBy": "Dana~aaaa1111",
+      "assignedAt": 1794170244917,
+      "_version": 3,
+      "reassignedBy": "Eli~bbbb2222",
+      "reassignedAt": 1794170244990,
+      "lastModifiedBy": "Dana~aaaa1111",
+      "lastModifiedAt": 1794170246229
+    }
+  },
+  "reassign409Busy": {
+    "status": 409,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "54",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:26 GMT",
+      "etag": "W/\"36-5PGyibLdq5yOt9xRG8FOGVGjC/o\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "Target truck already has an assigned route"
+    }
+  },
+  "reassign400Maintenance": {
+    "status": 400,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "49",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:26 GMT",
+      "etag": "W/\"31-M73VrU1xgh+WhWZPyEM8i4Ddo5w\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "Cannot assign to truck in maintenance"
+    }
+  },
+  "reassign404MissingTarget": {
+    "status": 404,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "34",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:26 GMT",
+      "etag": "W/\"22-UrS+JhpkSYZtnYJ624CoXbWSm+c\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "error": "Target truck not found"
+    }
+  },
+  "alert201": {
+    "status": 201,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "190",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:26 GMT",
+      "etag": "W/\"be-ulEWLtpqw8du7w1RSmtSOS3/e60\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "id": "5ca69e1f-b082-40d0-8c41-beeadf0fc4ff",
+      "truckId": "truck_1",
+      "message": "Check tyre pressure",
+      "severity": "warning",
+      "sentBy": "Dana~aaaa1111",
+      "timestamp": 1794170246243,
+      "acknowledged": false
+    }
+  },
+  "reset": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-headers": "Content-Type, X-Dispatcher-Id, If-Match",
+      "access-control-allow-methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+      "access-control-allow-origin": "*",
+      "connection": "keep-alive",
+      "content-length": "16",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 08 Nov 2026 20:37:36 GMT",
+      "etag": "W/\"10-oV4hJxRVSENxc/wX8+mA4/Pe4tA\"",
+      "keep-alive": "timeout=5",
+      "x-powered-by": "Express"
+    },
+    "body": {
+      "success": true
+    }
+  }
+}
