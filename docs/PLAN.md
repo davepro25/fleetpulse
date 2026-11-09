@@ -188,13 +188,15 @@ Sources: **BR** = Basic Requirements · **TR** = Technical Req. · **EV** = Eval
 
 ```
 src/
-  api/          http (ky), sse, ws, backoff, routes (S5)              talk to the server
+  api/          endpoints (URLs, headers), http (ky instance), fleet, routes, sse, ws, backoff
   contracts/    zod schemas + inferred types, per domain     the wire contract
   domain/       pure TS, no React: telemetry/ (S3), routes/ (S5), presence.ts (S6), alerts.ts (S7)
   stores/       Zustand: connection, telemetry, presence, audit, alerts
-  queries/      TanStack queryOptions + cache updates (fleet, routes, truck detail)
-  context/      AppContext (DI only)
-  hooks/        useNow, route mutations
+  queries/      TanStack query hooks (useFleet, useRoutes, ...), keys.ts, cache updates; options not exported
+  mutations/    TanStack mutation hooks (routes, alerts)
+  context/      SessionContext (DI only)
+  hooks/        generic hooks (useNow)
+  pages/        Dashboard (layout + startLive effect)
   components/   IdentityGate; fleet/, routes/, presence/, detail/, ui/
   utils/        json, identity
   live.ts       composition root: api -> domain/stores/queries
@@ -300,10 +302,10 @@ type WsOutbound = { type: 'register_dispatcher'; dispatcherId: string; name: str
 - `src/api/ws.ts`: `openDispatcherSocket(identity, {onMessage, onStatus, onRtt, onReconnected}, url?)` returning `{ sendViewing(truckId | null), reregister(), close() }`.
 - `src/api/backoff.ts` (SSE/WS reconnect delay), `src/utils/json.ts` (`parseJson` that never throws), `src/utils/identity.ts` (`createIdentity`, `loadIdentity` via a zod schema, `validateName`; sessionStorage).
 - `src/stores/connectionStore.ts`: Zustand `{ sse, ws, wsRttMs }`.
-- `src/context/AppContext.tsx`: `{ identity, socket }` + `useApp()`.
+- `src/context/SessionContext.tsx`: `{ identity, socket }` + `useSession()`.
 - `src/components/IdentityGate.tsx`: name form, shown until an identity exists.
 - `src/queries/fleet.ts`: `fleetQueryOptions`. `src/queryClient.ts`: `createQueryClient()` (TanStack `retry: false`, `staleTime: Infinity`).
-- `src/live.ts`: `startLive({ queryClient, identity }): { socket, stop() }`, called in an `App` effect whose cleanup is `stop()`.
+- `src/live.ts`: `startLive(queryClient, identity): { socket, stop() }`, called in a `Dashboard` effect whose cleanup is `stop()`.
 
 **Design decisions:**
 
@@ -349,7 +351,7 @@ type WsOutbound = { type: 'register_dispatcher'; dispatcherId: string; name: str
 **Time:** build 1.25 h + review 1.0 h
 **Files:** (as built; simpler than first planned, see the note below)
 
-- `src/domain/telemetry/profiles.ts`: `VehicleProfile`, `PROFILES.truck` (0-130 km/h, drop > 5 % suspect, 10 s confirm, low < 15 %), `profileFor(truckId)`.
+- `src/domain/telemetry/profiles.ts`: `VehicleProfile`, `PROFILES.truck` (0-130 km/h, drop > 5 % suspect, 10 s confirm, low < 15 %). Detectors take the profile as a parameter (the API has no vehicle type; a new type is a new entry).
 - `src/domain/telemetry/detectors.ts`: `SensorValue { value; fault }`, `checkSpeed(prev, raw, ts, profile)`, `checkFuel(prev, raw, ts, profile)`, `isLowFuel(fuel, profile)`.
 - `src/domain/telemetry/pipeline.ts`: `TruckLive`, `FleetLive`, `applyTelemetry(fleet, telemetry | gps_batch)`, `BUFFER_CAP = 150`; private `mergeByTimestamp` for samples and path.
 - `src/stores/telemetryStore.ts`: `{ fleet, lastTelemetryAt, ingest(message, receivedAt) }`.
@@ -675,3 +677,11 @@ None. R01–R57 each map to one stage. R58 (circuit breaker + bonus features) is
 ## (c) Deliberately left out (ponytail)
 
 Circuit breaker and every bonus feature · form library · router · CSS framework · RingBuffer class · rAF/timer flush scheduler · optimistic updates · side-by-side conflict merge · presence heartbeat · notes/priority editing · e2e/Playwright · engine-temp anomaly detection · vehicle-type field (the API has none).
+
+---
+
+## Change log after Stage 5 review
+
+- `getJson` / `sendJson` removed: ky 2 validates with `.json(schema)` (Standard Schema, zod 4). `api/http.ts` holds only the ky instance; `api/fleet.ts` and `api/routes.ts` call it directly.
+- All URLs and header names in `api/endpoints.ts`; cache keys in `queries/keys.ts` (live.ts invalidates with them instead of loose strings).
+- Components never call `useQuery` / `useMutation` directly: queries are hooks in `queries/*` (options stay private), mutations are hooks in `mutations/*`.

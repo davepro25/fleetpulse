@@ -1,5 +1,6 @@
 import { WsInboundSchema, type WsInbound, type WsOutbound } from '../contracts';
 import { backoffMs } from './backoff';
+import { API } from './endpoints';
 import type { Identity } from '../utils/identity';
 import { parseJson } from '../utils/json';
 import type { StreamStatus } from './sse';
@@ -24,7 +25,7 @@ export interface DispatcherSocket {
 }
 
 export function defaultWsUrl(): string {
-  return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
+  return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}${API.socket}`;
 }
 
 export function openDispatcherSocket(

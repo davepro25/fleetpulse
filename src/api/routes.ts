@@ -1,8 +1,24 @@
-import { RouteSchema, type CreateRouteRequest, type Route, type RouteStatus } from '../contracts';
-import { sendJson } from './http';
+import {
+  RouteSchema,
+  RoutesResponseSchema,
+  type CreateRouteRequest,
+  type Route,
+  type RouteStatus,
+} from '../contracts';
+import { API, HEADER } from './endpoints';
+import { api } from './http';
 
-export function createRoute(dispatcherId: string, body: CreateRouteRequest): Promise<Route> {
-  return sendJson('post', '/api/routes', { dispatcherId, body }, RouteSchema);
+// Mutations throw ky's HTTPError on non-2xx; the parsed error body (e.g. a 409) is in `error.data`.
+
+export async function fetchRoutes(signal?: AbortSignal): Promise<Route[]> {
+  const { routes } = await api.get(API.routes, { signal }).json(RoutesResponseSchema);
+  return routes;
+}
+
+export function createRoute(dispatcherId: string, route: CreateRouteRequest): Promise<Route> {
+  return api
+    .post(API.routes, { headers: { [HEADER.dispatcher]: dispatcherId }, json: route })
+    .json(RouteSchema);
 }
 
 // Always sends If-Match: the server only checks the version when the header is present.
@@ -11,12 +27,12 @@ export function updateRouteStatus(
   route: Pick<Route, 'id' | '_version'>,
   status: RouteStatus,
 ): Promise<Route> {
-  return sendJson(
-    'patch',
-    `/api/routes/${encodeURIComponent(route.id)}`,
-    { dispatcherId, ifMatch: route._version, body: { status } },
-    RouteSchema,
-  );
+  return api
+    .patch(API.route(route.id), {
+      headers: { [HEADER.dispatcher]: dispatcherId, [HEADER.ifMatch]: String(route._version) },
+      json: { status },
+    })
+    .json(RouteSchema);
 }
 
 export function reassignRoute(
@@ -24,10 +40,10 @@ export function reassignRoute(
   routeId: string,
   newTruckId: string,
 ): Promise<Route> {
-  return sendJson(
-    'put',
-    `/api/routes/${encodeURIComponent(routeId)}/reassign`,
-    { dispatcherId, body: { newTruckId } },
-    RouteSchema,
-  );
+  return api
+    .put(API.reassign(routeId), {
+      headers: { [HEADER.dispatcher]: dispatcherId },
+      json: { newTruckId },
+    })
+    .json(RouteSchema);
 }

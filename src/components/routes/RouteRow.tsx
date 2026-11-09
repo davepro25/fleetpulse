@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Route, RouteStatus, TruckStatus } from '../../contracts';
-import { useApp } from '../../context/AppContext';
+import { useSession } from '../../context/SessionContext';
 import { lastActor } from '../../domain/routes/conflicts';
 import {
   assignableTruckIds,
@@ -13,17 +13,19 @@ import {
   mutationErrorMessage,
   useReassignRoute,
   useUpdateRouteStatus,
-} from '../../hooks/useRouteMutations';
+} from '../../mutations/routes';
 import { useTruckName } from '../../queries/fleet';
 import { displayName } from '../../utils/identity';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { ROUTE_STATUS_TONE } from '../fleet/statusStyle';
+import { Alert, Badge, Button, inputClass } from '../ui';
 import { TruckOption } from './TruckOption';
 
-const ACTION_LABEL: Record<RouteStatus, string> = {
-  assigned: 'Assign',
-  'in-progress': 'Start',
-  completed: 'Complete',
-  cancelled: 'Cancel route',
+const ACTION: Record<RouteStatus, { label: string; variant: 'primary' | 'danger' }> = {
+  assigned: { label: 'Assign', variant: 'primary' },
+  'in-progress': { label: 'Start', variant: 'primary' },
+  completed: { label: 'Complete', variant: 'primary' },
+  cancelled: { label: 'Cancel route', variant: 'danger' },
 };
 
 /** What the dispatcher is about to confirm, with the route version they saw when deciding. */
@@ -38,7 +40,7 @@ interface Props {
 }
 
 export function RouteRow({ route, routes, statuses }: Props) {
-  const { identity } = useApp();
+  const { identity } = useSession();
   const update = useUpdateRouteStatus();
   const reassign = useReassignRoute();
   const [pending, setPending] = useState<PendingAction | null>(null);
@@ -64,48 +66,62 @@ export function RouteRow({ route, routes, statuses }: Props) {
     action.type === 'status' && action.to === 'in-progress' ? run(action) : setPending(action);
 
   return (
-    <li className="route">
-      <div>
-        <strong>{route.destination}</strong> · {truckName} · {route.status} · {route.priority}
+    <li className="grid gap-2 rounded-md border border-slate-200 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate font-medium text-slate-900">{route.destination}</p>
+          <p className="text-xs text-slate-500">
+            {route.id} · {truckName}
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-1">
+          <Badge tone={ROUTE_STATUS_TONE[route.status]}>{route.status}</Badge>
+          <Badge>{route.priority}</Badge>
+        </div>
       </div>
-      {route.notes && <div className="muted">{route.notes}</div>}
+      {route.notes && <p className="text-sm text-slate-600">{route.notes}</p>}
 
       {isActive(route) && (
-        <div className="route-actions">
+        <div className="flex flex-wrap items-center gap-2">
           {nextStatuses(route.status).map((to) => (
-            <button
+            <Button
               key={to}
+              variant={ACTION[to].variant}
               disabled={saving}
               onClick={() => choose({ type: 'status', to, version: route._version })}
             >
-              {ACTION_LABEL[to]}
-            </button>
+              {ACTION[to].label}
+            </Button>
           ))}
-          <select value={target} onChange={(e) => setTarget(e.target.value)} disabled={saving}>
-            <option value="">Move to…</option>
-            {assignableTruckIds(statuses, routes).map((id) => (
-              <TruckOption key={id} id={id} />
-            ))}
-          </select>
-          <button
-            disabled={saving || !target}
-            onClick={() => choose({ type: 'reassign', truckId: target, version: route._version })}
-          >
-            Reassign
-          </button>
-          {saving && <span className="muted">Saving…</span>}
+          <span className="ml-auto flex items-center gap-2">
+            <select
+              aria-label={`Move ${route.id} to another truck`}
+              className={`${inputClass} w-36`}
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              disabled={saving}
+            >
+              <option value="">Move to…</option>
+              {assignableTruckIds(statuses, routes).map((id) => (
+                <TruckOption key={id} id={id} />
+              ))}
+            </select>
+            <Button
+              disabled={saving || !target}
+              onClick={() => choose({ type: 'reassign', truckId: target, version: route._version })}
+            >
+              Reassign
+            </Button>
+          </span>
         </div>
       )}
 
-      {error && (
-        <p role="alert" className="warn">
-          {mutationErrorMessage(error, identity.id)}
-        </p>
-      )}
+      {saving && <p className="text-xs text-slate-500">Saving… the server takes up to a second.</p>}
+      {error && <Alert>{mutationErrorMessage(error, identity.id)}</Alert>}
 
       {pending && (
         <ConfirmDialog
-          title={pending.type === 'status' ? `${ACTION_LABEL[pending.to]}?` : 'Reassign route?'}
+          title={pending.type === 'status' ? `${ACTION[pending.to].label}?` : 'Reassign route?'}
           disabledReason={blockedReason(pending, route, routes, statuses)}
           onCancel={() => setPending(null)}
           onConfirm={() => {

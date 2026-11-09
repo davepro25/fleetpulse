@@ -1,8 +1,11 @@
 import 'leaflet/dist/leaflet.css';
-import { MapContainer, Polyline, TileLayer } from 'react-leaflet';
-import { useTruck, useTruckIds } from '../../stores/telemetryStore';
+import { useEffect } from 'react';
+import { MapContainer, Polyline, TileLayer, useMap } from 'react-leaflet';
+import { useTelemetryStore, useTruck, useTruckIds } from '../../stores/telemetryStore';
+import { MARKER_RING, STATUS_COLOR } from './statusStyle';
 import { TruckMarker } from './TruckMarker';
 
+// The mock server keeps every truck near its CITY_CENTER (Tel Aviv).
 const TEL_AVIV: [number, number] = [32.0853, 34.7818];
 
 interface Props {
@@ -15,16 +18,20 @@ export function FleetMap({ selectedId, onSelect }: Props) {
   const ids = useTruckIds();
 
   return (
-    <MapContainer center={TEL_AVIV} zoom={13} className="map">
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
-      />
-      {selectedId && <SelectedPath id={selectedId} />}
-      {ids.map((id) => (
-        <TruckMarker key={id} id={id} selected={id === selectedId} onSelect={onSelect} />
-      ))}
-    </MapContainer>
+    <>
+      <MapContainer center={TEL_AVIV} zoom={13} className="h-full w-full">
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; OpenStreetMap contributors"
+        />
+        {selectedId && <SelectedPath id={selectedId} />}
+        {selectedId && <PanToSelected id={selectedId} />}
+        {ids.map((id) => (
+          <TruckMarker key={id} id={id} selected={id === selectedId} onSelect={onSelect} />
+        ))}
+      </MapContainer>
+      <Legend />
+    </>
   );
 }
 
@@ -32,5 +39,38 @@ export function FleetMap({ selectedId, onSelect }: Props) {
 function SelectedPath({ id }: { id: string }) {
   const truck = useTruck(id);
   if (!truck) return null;
-  return <Polyline positions={truck.path} pathOptions={{ color: '#534AB7', weight: 2 }} />;
+  return <Polyline positions={truck.path} pathOptions={{ color: '#4f46e5', weight: 3 }} />;
+}
+
+/** Pans once per selection, not on every position update. */
+function PanToSelected({ id }: { id: string }) {
+  const map = useMap();
+  useEffect(() => {
+    const truck = useTelemetryStore.getState().fleet[id];
+    if (truck) map.panTo([truck.location.lat, truck.location.lng]);
+  }, [id, map]);
+  return null;
+}
+
+function Legend() {
+  const swatch = (fill: string, ring: string, label: string) => (
+    <li className="flex items-center gap-2">
+      <span
+        aria-hidden="true"
+        className="size-3 rounded-full border-2"
+        style={{ background: fill, borderColor: ring }}
+      />
+      {label}
+    </li>
+  );
+
+  return (
+    <ul className="absolute bottom-3 left-3 z-[1000] grid gap-1 rounded-md bg-white/95 px-3 py-2 text-xs text-slate-700 shadow ring-1 ring-slate-200">
+      {swatch(STATUS_COLOR.active, MARKER_RING.none, 'Active')}
+      {swatch(STATUS_COLOR.idle, MARKER_RING.none, 'Idle')}
+      {swatch(STATUS_COLOR.maintenance, MARKER_RING.none, 'Maintenance')}
+      {swatch('#fff', MARKER_RING.lowFuel, 'Red ring: low fuel')}
+      {swatch('#fff', MARKER_RING.sensorFault, 'Amber ring: sensor fault')}
+    </ul>
+  );
 }

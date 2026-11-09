@@ -20,12 +20,14 @@ export function validateName(raw: string): NameResult {
   return { ok: false, error: '2-24 characters: letters, digits, space, dot, dash or underscore' };
 }
 
-// sessionStorage: a reload keeps the identity, a new tab is a new dispatcher.
-// Caveat: Chrome's "Duplicate tab" copies sessionStorage, so a duplicated tab shares the id.
 export function createIdentity(name: string): Identity {
   const identity = { id: `${name}~${crypto.randomUUID().slice(0, 8)}`, name };
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
   return identity;
+}
+
+export function clearIdentity(): void {
+  sessionStorage.removeItem(STORAGE_KEY);
 }
 
 export function loadIdentity(): Identity | null {
@@ -33,7 +35,6 @@ export function loadIdentity(): Identity | null {
   return saved.success ? saved.data : null;
 }
 
-/** "Dana~3f9a1c2e" → "Dana". An id from a client that doesn't use our scheme is shown whole. */
 export function displayName(dispatcherId: string): string {
   const at = dispatcherId.lastIndexOf('~');
   return at > 0 ? dispatcherId.slice(0, at) : dispatcherId;

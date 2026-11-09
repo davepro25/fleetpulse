@@ -8,7 +8,8 @@ import {
   reassignBlockedReason,
 } from '../src/domain/routes/transitions';
 import { validateRouteForm } from '../src/domain/routes/validation';
-import { applyRouteChange, routesQueryOptions } from '../src/queries/routes';
+import { QUERY_KEYS } from '../src/queries/keys';
+import { applyRouteChange } from '../src/queries/routes';
 import { useAuditStore } from '../src/stores/auditStore';
 import rest from './fixtures/rest.json';
 
@@ -94,10 +95,10 @@ describe('route cache and audit log', () => {
 
   const setup = () => {
     const client = new QueryClient();
-    client.setQueryData(routesQueryOptions.queryKey, [created]);
+    client.setQueryData(QUERY_KEYS.routes, [created]);
     return client;
   };
-  const cached = (client: QueryClient) => client.getQueryData(routesQueryOptions.queryKey);
+  const cached = (client: QueryClient) => client.getQueryData(QUERY_KEYS.routes);
 
   // Our HTTP response and the WS echo of the same change carry the same route version, in either
   // order (the server broadcasts before it responds), so applying it twice must change nothing.

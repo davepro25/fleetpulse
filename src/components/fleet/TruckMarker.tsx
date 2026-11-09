@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import { CircleMarker, Tooltip } from 'react-leaflet';
 import { isLowFuel } from '../../domain/telemetry/detectors';
-import { profileFor } from '../../domain/telemetry/profiles';
+import { PROFILES } from '../../domain/telemetry/profiles';
 import { useTruckName } from '../../queries/fleet';
 import { useTruck } from '../../stores/telemetryStore';
-import { STATUS_COLOR } from './statusStyle';
+import { MARKER_RING, STATUS_COLOR } from './statusStyle';
 
 interface Props {
   id: string;
@@ -17,7 +17,7 @@ export const TruckMarker = memo(function TruckMarker({ id, selected, onSelect }:
   const name = useTruckName(id);
   if (!truck) return null;
 
-  const lowFuel = isLowFuel(truck.fuel, profileFor(id));
+  const lowFuel = isLowFuel(truck.fuel, PROFILES.truck);
   const sensorFault = truck.speed.fault !== null || truck.fuel.fault !== null;
 
   return (
@@ -27,7 +27,11 @@ export const TruckMarker = memo(function TruckMarker({ id, selected, onSelect }:
       pathOptions={{
         fillColor: STATUS_COLOR[truck.status],
         fillOpacity: 0.9,
-        color: lowFuel ? '#E24B4A' : sensorFault ? '#BA7517' : '#2C2C2A',
+        color: lowFuel
+          ? MARKER_RING.lowFuel
+          : sensorFault
+            ? MARKER_RING.sensorFault
+            : MARKER_RING.none,
         weight: lowFuel || sensorFault ? 3 : 1,
       }}
       eventHandlers={{ click: () => onSelect(id) }}

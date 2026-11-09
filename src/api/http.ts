@@ -1,8 +1,8 @@
 import ky from 'ky';
-import type { z } from 'zod';
 
 // The only retry layer for REST: TanStack retries are off (queryClient.ts).
-const api = ky.create({
+// Responses are validated with `.json(schema)`: ky accepts zod schemas directly.
+export const api = ky.create({
   retry: {
     limit: 3,
     methods: ['get'], // a retried PUT/PATCH could apply twice
@@ -11,33 +11,3 @@ const api = ky.create({
     maxRetryAfter: 30_000,
   },
 });
-
-export async function getJson<S extends z.ZodType>(
-  path: string,
-  schema: S,
-  signal?: AbortSignal,
-): Promise<z.output<S>> {
-  const body = await api.get(path, { signal }).json();
-  return schema.parse(body);
-}
-
-export interface SendOptions {
-  dispatcherId: string;
-  body?: unknown;
-  /** Route _version. Sent as a bare integer because the server parseInt()s it. */
-  ifMatch?: number;
-}
-
-/** Throws ky's HTTPError on non-2xx; the parsed error body (e.g. a 409) is in `error.data`. */
-export async function sendJson<S extends z.ZodType>(
-  method: 'post' | 'patch' | 'put',
-  path: string,
-  { dispatcherId, body = {}, ifMatch }: SendOptions,
-  schema: S,
-): Promise<z.output<S>> {
-  const headers: Record<string, string> = { 'X-Dispatcher-Id': dispatcherId };
-  if (ifMatch !== undefined) headers['If-Match'] = String(ifMatch);
-
-  const data = await api(path, { method, headers, json: body }).json();
-  return schema.parse(data);
-}

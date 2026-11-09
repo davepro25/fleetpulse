@@ -6,7 +6,7 @@ import type {
   TruckStatus,
 } from '../../contracts';
 import { checkFuel, checkSpeed, NO_VALUE, type SensorValue } from './detectors';
-import { profileFor } from './profiles';
+import { PROFILES } from './profiles';
 
 /** 5 minutes of readings at one per 2 s, with room for a 29-point batch. */
 export const BUFFER_CAP = 150;
@@ -68,7 +68,7 @@ function applyReadings(
 }
 
 function advance(truck: TruckLive, reading: TelemetryReading): TruckLive {
-  const profile = profileFor(truck.id);
+  const profile = PROFILES.truck;
   const speed = checkSpeed(truck.speed, reading.speed, reading.timestamp, profile);
   const fuel = checkFuel(truck.fuel, reading.fuel, reading.timestamp, profile);
   const sample: Sample = {

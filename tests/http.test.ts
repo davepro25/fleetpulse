@@ -1,8 +1,8 @@
 import { HTTPError } from 'ky';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sendJson } from '../src/api/http';
-import { RouteSchema } from '../src/contracts';
-import { fleetQueryOptions } from '../src/queries/fleet';
+import { fetchFleet } from '../src/api/fleet';
+import { reassignRoute, updateRouteStatus } from '../src/api/routes';
+import { QUERY_KEYS } from '../src/queries/keys';
 import { createQueryClient } from '../src/queryClient';
 import rest from './fixtures/rest.json';
 
@@ -39,7 +39,7 @@ describe('http', () => {
       .mockResolvedValueOnce(reply(rest.fleet503))
       .mockResolvedValueOnce(reply(rest.fleet200));
 
-    const result = createQueryClient().fetchQuery(fleetQueryOptions);
+    const result = fetchFleet();
     await vi.advanceTimersByTimeAsync(2_999);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1);
@@ -48,31 +48,27 @@ describe('http', () => {
     await expect(result).resolves.toEqual(rest.fleet200.body);
   });
 
-  it('gives up after 3 retries and keeps the last good snapshot', async () => {
+  it('gives up after 3 retries, and the cache keeps the last good snapshot', async () => {
     const client = createQueryClient();
+    const fleet = { queryKey: QUERY_KEYS.fleet, queryFn: () => fetchFleet(), staleTime: 0 };
     fetchMock.mockResolvedValueOnce(reply(rest.fleet200));
-    await client.fetchQuery(fleetQueryOptions);
+    await client.fetchQuery(fleet);
 
     fetchMock.mockImplementation(async () => reply(rest.fleet503));
-    const refetch = client.fetchQuery({ ...fleetQueryOptions, staleTime: 0 });
-    const outcome = expect(refetch).rejects.toBeInstanceOf(HTTPError);
+    const outcome = expect(client.fetchQuery(fleet)).rejects.toBeInstanceOf(HTTPError);
     await vi.advanceTimersByTimeAsync(3 * 3_000);
     await outcome;
 
     expect(fetchMock).toHaveBeenCalledTimes(1 + 4);
-    expect(client.getQueryData(fleetQueryOptions.queryKey)).toEqual(rest.fleet200.body);
+    expect(client.getQueryData(QUERY_KEYS.fleet)).toEqual(rest.fleet200.body);
   });
 
   it('never retries a mutation, even on 503', async () => {
     fetchMock.mockImplementation(async () => reply(rest.fleet503));
 
-    const call = sendJson(
-      'put',
-      '/api/routes/route_1/reassign',
-      { dispatcherId: 'Dana~aaaa1111', body: { newTruckId: 'truck_4' } },
-      RouteSchema,
-    );
-    const outcome = expect(call).rejects.toBeInstanceOf(HTTPError);
+    const outcome = expect(
+      reassignRoute('Dana~aaaa1111', 'route_1', 'truck_4'),
+    ).rejects.toBeInstanceOf(HTTPError);
     await vi.advanceTimersByTimeAsync(30_000);
     await outcome;
 
@@ -82,12 +78,7 @@ describe('http', () => {
   it('sends X-Dispatcher-Id and If-Match as a bare integer', async () => {
     fetchMock.mockResolvedValueOnce(reply(rest.patch200));
 
-    await sendJson(
-      'patch',
-      '/api/routes/route_1',
-      { dispatcherId: 'Dana~aaaa1111', ifMatch: 2, body: { status: 'in-progress' } },
-      RouteSchema,
-    );
+    await updateRouteStatus('Dana~aaaa1111', { id: 'route_1', _version: 2 }, 'in-progress');
 
     const request = fetchMock.mock.calls[0]![0];
     expect(request.headers.get('X-Dispatcher-Id')).toBe('Dana~aaaa1111');

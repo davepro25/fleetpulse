@@ -1,12 +1,29 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { createIdentity, loadIdentity, validateName, type Identity } from '../utils/identity';
+import {
+  clearIdentity,
+  createIdentity,
+  loadIdentity,
+  validateName,
+  type Identity,
+} from '../utils/identity';
+import { Button, Field, inputClass } from './ui';
 
-export function IdentityGate({ children }: { children: (identity: Identity) => ReactNode }) {
+export function IdentityGate({
+  children,
+}: {
+  children: (identity: Identity, signOut: () => void) => ReactNode;
+}) {
   const [identity, setIdentity] = useState<Identity | null>(() => loadIdentity());
   const [name, setName] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | undefined>(undefined);
 
-  if (identity) return children(identity);
+  const signOut = () => {
+    clearIdentity();
+    setName('');
+    setIdentity(null);
+  };
+
+  if (identity) return children(identity, signOut);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -16,24 +33,30 @@ export function IdentityGate({ children }: { children: (identity: Identity) => R
   };
 
   return (
-    <form className="identity-gate" onSubmit={submit}>
-      <h1>FleetPulse</h1>
-      <label htmlFor="dispatcher-name">Your dispatcher name</label>
-      <input
-        id="dispatcher-name"
-        value={name}
-        maxLength={24}
-        autoFocus
-        onChange={(e) => setName(e.target.value)}
-        aria-invalid={error !== null}
-        aria-describedby="dispatcher-name-error"
-      />
-      {error && (
-        <p id="dispatcher-name-error" role="alert">
-          {error}
-        </p>
-      )}
-      <button type="submit">Start</button>
-    </form>
+    <main className="grid min-h-screen place-items-center p-4">
+      <form
+        onSubmit={submit}
+        noValidate
+        className="grid w-full max-w-sm gap-4 rounded-lg bg-white p-6 shadow-sm ring-1 ring-slate-200"
+      >
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900">FleetPulse</h1>
+          <p className="text-sm text-slate-500">Enter your name to start dispatching.</p>
+        </div>
+        <Field label="Dispatcher name" error={error}>
+          <input
+            className={inputClass}
+            value={name}
+            maxLength={24}
+            autoFocus
+            aria-invalid={error !== undefined}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Field>
+        <Button type="submit" variant="primary">
+          Start
+        </Button>
+      </form>
+    </main>
   );
 }

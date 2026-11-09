@@ -1,5 +1,6 @@
 import { SseMessageSchema, type SseMessage } from '../contracts';
 import { backoffMs } from './backoff';
+import { API } from './endpoints';
 import { parseJson } from '../utils/json';
 
 export type StreamStatus = 'connecting' | 'open' | 'reconnecting';
@@ -13,7 +14,7 @@ export interface TelemetryStreamHandlers {
 
 export function openTelemetryStream(
   handlers: TelemetryStreamHandlers,
-  url = '/api/telemetry/stream',
+  url: string = API.telemetryStream,
 ): () => void {
   let source: EventSource | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;

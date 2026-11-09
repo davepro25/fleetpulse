@@ -214,3 +214,63 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 - Eli starts the route while Dana's "Cancel route" dialog is open: Confirm disables with "Eli updated this route while this was open".
 - Quirk 8: Dana confirms Complete, and Eli reassigns during the PATCH delay. Dana gets the actor-less processing-409, and after the refetch sees "route_1 was reassigned by Eli at 16:05:12".
 - Truck Golf (maintenance) and busy trucks never appear in the create or "Move to" pickers.
+
+---
+
+## UI refactor (Tailwind)
+
+**Prompt (summary):** Go over the whole UI and refactor it so it's simple, easy on the eyes and convenient to use, with Tailwind, and make sure every use case in the assignment is understandable at the UX level. Ran with the `ui-ux-pro-max` skill.
+
+**What the design tool suggested, and what I took:** "Minimalism & Swiss Style", dense, little motion. That fits a dispatcher dashboard, so I kept it. Rejected its palette (terminal green on near-black), because it doesn't match "easy on the eyes", and its Google font (an extra network dependency for no functional gain). Used light slate neutrals with semantic colours (green, sky, amber, red, indigo) and the system font. Applied its checklist: no emoji icons, visible focus, `cursor-pointer` and hover states, 4.5:1 contrast, and responsive from 375 px to desktop.
+
+**Use cases from the assignment that the old UI didn't make clear, and the fix:**
+
+- Status distinction on the map was colour only. Added a legend for statuses and for the two rings (low fuel, sensor fault).
+- Sensor anomalies were a long sentence squeezing the table. Now a short badge ("Sensor fault" / "Glitch?") with the full explanation in its tooltip; low fuel is a red badge.
+- Connection state was plain text. Now status pills (text + colour), and "Telemetry: no update for Ns" when stale.
+- Selecting a truck only highlighted a row. It now also pans the map to the truck, draws its path, and pre-selects it in the new-route form when it is free.
+- The route card shows destination, route id, truck, a status badge and a priority badge, with buttons by role (Start / Complete primary, Cancel route danger) and "Saving… the server takes up to a second" during the PATCH delay.
+- The confirm dialog is a real modal: focus starts on Cancel (the safe choice), Escape or a click outside cancels it, and a WS change while it's open shows an amber explanation and disables Confirm.
+- Form errors appear under each field. A helper line explains why some trucks aren't offered (maintenance or already on a route).
+
+**Structure:** `components/ui.tsx` holds the few shared primitives (`Button`, `Badge`, `Panel`, `Alert`, `Field`, `inputClass`, `Muted`); colour mappings sit in `components/fleet/statusStyle.ts`. `styles.css` is now just the Tailwind import plus one Leaflet fix: Tailwind's preflight `img { max-width: 100% }` breaks map tiles.
+
+**Verified in the browser:**
+
+- The name screen, then the dashboard with 12 trucks and the legend.
+- Clicking Truck Delta highlighted its row, panned the map, filled the details panel and pre-selected it in the form.
+- Submitting without a destination showed "Destination is required" under the field; then the route was created.
+- The Cancel route dialog opened with focus on Cancel, and Escape closed it without changing the route.
+- No horizontal scroll at 1024 px or 375 px.
+
+**Not verified:** dark mode (not implemented; light only), and a screen-reader pass.
+
+**Follow-up requests:**
+
+- **Sidebar tabs instead of stacked panels**, so you don't have to scroll down. Trucks / Routes / Activity / Dispatchers, each with a count (trucks, active routes, activity entries). Built as WAI-ARIA tabs: `role="tab"`, `aria-selected`, arrow-key navigation. Inactive tabs stay mounted but `hidden`, so a half-filled route form or an open confirm dialog survives a tab switch.
+- **Sign out.** It clears the identity from sessionStorage and the activity log (it described "since this tab connected" for the previous identity), and returns to the name screen. Unmounting the dashboard runs `live.stop()`, which closes SSE and WS, so the server broadcasts `dispatcher_left`. Signing in again creates a new dispatcher id.
+- Verified in the browser: tab switching by click and by ArrowRight; Sign out shows the name screen and leaves sessionStorage empty.
+- **Tabs and table header looked alike** (same size and weight as the table rows). The tab bar is now a segmented control: a grey strip, the active tab a raised white button in bold indigo, with counts in small pills. The table header has a light grey background, smaller uppercase grey labels, and stays pinned while the list scrolls.
+
+---
+
+## Review of the API and query layer (after Stage 5)
+
+**Prompt (summary):** `/ponytail-review` of `api/http.ts`, `api/routes.ts` and `queries/routes.ts`. Why do `getJson` / `sendJson` exist, and isn't TanStack enough? Use common patterns and library features instead of inventing helpers, put URLs and similar values in constants, and add short comments to `detectors.ts`. Then: wrap every `useQuery` in a hook inside `queries/`, put mutations in `mutations/`, and don't export query options at all.
+
+**Findings and what changed:**
+
+- **`getJson` / `sendJson` were our own wrapper around a feature ky already has.** ky 2's `.json(schema)` accepts Standard Schema validators, and zod 4 is one. Both helpers were deleted; `api/fleet.ts` and `api/routes.ts` now call `api.get(...).json(Schema)`, `api.patch(...)` and so on directly, the way ky's docs show.
+- **Query keys were written twice.** `live.ts` invalidated `['fleet']` / `['routes']` as loose strings while the queries defined them separately, so renaming one would silently stop the refetch after a reconnect. Now `queries/keys.ts` is the single source.
+- **URLs were spread over five files.** Now `api/endpoints.ts` holds every URL (including `route(id)` and `reassign(id)`) and the header names.
+- **Is TanStack enough for routes?** For loading, caching, pending state and mutation errors, yes, and it's used for exactly that. It doesn't make HTTP calls (ky does), and it has no notion of "this version is older, ignore it" or of an audit log, so `applyRouteChange` (built on `setQueryData`) stays.
+- **Hooks only.** Components call `useFleet`, `useTruckName`, `useRoutes`, `useActiveRouteCount` (queries) and `useCreateRoute`, `useUpdateRouteStatus`, `useReassignRoute` (mutations). The `queryOptions` objects are private to their files; `refetchRoutes(client)` is exported for the 409 lookup. No component imports `useQuery` or `useMutation`.
+- **`detectors.ts`:** a short comment on each branch, saying which case it covers (stuck 999 / negative batch speed; consumption, refuel or recovered glitch; a sudden drop confirmed as real; an unconfirmed drop held as a glitch).
+
+**My question to the AI: why a per-vehicle profile?** Answer: it's per vehicle _type_, not per truck. Today there is one entry (`truck`). The only justification in the assignment is the evaluation question "Could a new vehicle type be added without touching existing code?". The spec does not say vehicle types have different limits, and the API has no vehicle-type field. The numbers come from reading `server.js` (live speed ≤ 80, batch ≤ 85, history ≤ 90; consumption ~0.02 % per reading; glitch ≤ 4 s), except 15 % low fuel, which is our default (open question Q-4).
+
+**Verified:** typecheck and 32 tests pass, including the 503 → exactly 3 s retry through the real `.json(schema)` path. In the browser: the truck list and routes load, and "Start" on a route went through with `If-Match` and appeared in Activity.
+
+- **Follow-up: is the profile parameter worth it?** I asked whether a plain const map would be simpler than passing a profile. Outcome: `profileFor(truckId)` was deleted. It took a truck id and ignored it, which misleads a reader. Call sites now use `PROFILES.truck` directly, with one comment that the API has no vehicle type. The `PROFILES` map and the `profile` parameter stay: without the parameter, adding a "van" would mean changing `checkSpeed` / `checkFuel`, which is exactly what the evaluation question asks to avoid, and the profile test would need a mock.
+
+- **Follow-up: Dashboard, live.ts and naming.** `Dashboard` moved to `src/pages/Dashboard.tsx`; `App.tsx` only holds the identity gate. `startLive` now takes `(queryClient, identity)` and delegates to two named handlers (`handleTelemetry`, `handleDispatch`); an SSE reconnect invalidates every query instead of a hand-made list of keys. `closeStream` and `socket` stay local to `startLive`: `stop()` must close exactly the connections this call opened (module-level variables would be shared by React StrictMode's double mount and by a sign-out followed by a sign-in). The context value `services` / `AppServices` was renamed to `session` / `Session` (`SessionContext`, `useSession`): it is not data to load, it is who is signed in plus the socket opened for them. Kept on purpose: the `telemetryStore` name, Zustand's `use…Store` convention, the numeric sort of ids, and names coming from the fleet query instead of the store.

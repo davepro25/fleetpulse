@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import { Alert, Button } from './ui';
 
 interface Props {
   name: string;
@@ -24,9 +25,11 @@ export class ErrorBoundary extends Component<Props, State> {
   override render(): ReactNode {
     if (!this.state.error) return this.props.children;
     return (
-      <div role="alert" className="panel-error">
-        <p>{this.props.name} failed to load.</p>
-        <button onClick={() => this.setState({ error: null })}>Try again</button>
+      <div className="grid gap-2 rounded-lg bg-white p-4 ring-1 ring-slate-200">
+        <Alert>{this.props.name} failed to load.</Alert>
+        <div>
+          <Button onClick={() => this.setState({ error: null })}>Try again</Button>
+        </div>
       </div>
     );
   }

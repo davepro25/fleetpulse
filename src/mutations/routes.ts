@@ -2,9 +2,9 @@ import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-q
 import { HTTPError } from 'ky';
 import { createRoute, reassignRoute, updateRouteStatus } from '../api/routes';
 import type { CreateRouteRequest, Route, RouteStatus } from '../contracts';
-import { useApp } from '../context/AppContext';
+import { useSession } from '../context/SessionContext';
 import { conflictOwner, type ConflictOwner } from '../domain/routes/conflicts';
-import { applyRouteChange, routesQueryOptions } from '../queries/routes';
+import { applyRouteChange, refetchRoutes } from '../queries/routes';
 import { displayName } from '../utils/identity';
 
 export class RouteConflictError extends Error {
@@ -28,14 +28,14 @@ async function withConflictLookup<T>(
     return await call();
   } catch (error) {
     if (!(error instanceof HTTPError) || error.response.status !== 409) throw error;
-    const fresh = await client.fetchQuery({ ...routesQueryOptions, staleTime: 0 });
+    const fresh = await refetchRoutes(client);
     throw new RouteConflictError(conflictOwner(fresh, subject));
   }
 }
 
 export function useCreateRoute() {
   const client = useQueryClient();
-  const { identity } = useApp();
+  const { identity } = useSession();
   return useMutation({
     mutationFn: (input: CreateRouteRequest) =>
       withConflictLookup(client, { truckId: input.truckId }, () => createRoute(identity.id, input)),
@@ -45,7 +45,7 @@ export function useCreateRoute() {
 
 export function useUpdateRouteStatus() {
   const client = useQueryClient();
-  const { identity } = useApp();
+  const { identity } = useSession();
   return useMutation({
     /** `version` is the one the dispatcher saw when deciding, sent as If-Match. */
     mutationFn: ({
@@ -66,7 +66,7 @@ export function useUpdateRouteStatus() {
 
 export function useReassignRoute() {
   const client = useQueryClient();
-  const { identity } = useApp();
+  const { identity } = useSession();
   return useMutation({
     mutationFn: ({ route, truckId }: { route: Route; truckId: string }) =>
       withConflictLookup(client, { truckId }, () => reassignRoute(identity.id, route.id, truckId)),

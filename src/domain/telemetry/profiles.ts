@@ -8,6 +8,8 @@ export interface VehicleProfile {
   lowFuelPct: number;
 }
 
+// Limits per vehicle type. The API has no vehicle-type field, so every vehicle is a truck.
+// A new type is a new entry here; the detectors take a profile and never change.
 export const PROFILES = {
   truck: {
     minSpeedKmh: 0,
@@ -17,9 +19,3 @@ export const PROFILES = {
     lowFuelPct: 15,
   },
 } satisfies Record<string, VehicleProfile>;
-
-// The API has no vehicle type, so every vehicle is a truck. A new type is a new PROFILES entry
-// plus a mapping here; the detectors don't change.
-export function profileFor(_truckId: string): VehicleProfile {
-  return PROFILES.truck;
-}
