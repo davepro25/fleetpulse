@@ -1,10 +1,12 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { fleetQueryOptions } from './queries/fleet';
-import { startLive } from './live';
-import { AppProvider, type AppServices } from './context/AppContext';
-import { useConnectionStore } from './stores/connectionStore';
+import { ConnectionBanner } from './components/ConnectionBanner';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { FleetMap } from './components/fleet/FleetMap';
+import { TruckList } from './components/fleet/TruckList';
 import { IdentityGate } from './components/IdentityGate';
+import { AppProvider, type AppServices } from './context/AppContext';
+import { startLive } from './live';
 import type { Identity } from './utils/identity';
 
 export function App() {
@@ -14,6 +16,7 @@ export function App() {
 function Dashboard({ identity }: { identity: Identity }) {
   const queryClient = useQueryClient();
   const [services, setServices] = useState<AppServices | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
     const live = startLive({ queryClient, identity });
@@ -26,35 +29,21 @@ function Dashboard({ identity }: { identity: Identity }) {
   return (
     <AppProvider value={services}>
       <div className="layout">
-        <header className="banner">
-          FleetPulse · {identity.name} · <StatusLine />
-        </header>
-        <main className="map-panel">Map (Stage 4)</main>
+        <ConnectionBanner dispatcherName={identity.name} />
+        <main className="map-panel">
+          <ErrorBoundary name="Map">
+            <FleetMap selectedId={selectedId} onSelect={setSelectedId} />
+          </ErrorBoundary>
+        </main>
         <aside className="side-panel">
-          <section>Trucks (Stage 4)</section>
+          <ErrorBoundary name="Truck list">
+            <TruckList selectedId={selectedId} onSelect={setSelectedId} />
+          </ErrorBoundary>
           <section>Routes (Stage 5)</section>
           <section>Dispatchers (Stage 6)</section>
         </aside>
         <section className="detail-panel">Truck detail (Stage 7)</section>
       </div>
     </AppProvider>
-  );
-}
-
-// Temporary: replaced by the Stage 4 ConnectionBanner.
-function StatusLine() {
-  const { sse, ws, wsRttMs } = useConnectionStore();
-  const fleet = useQuery(fleetQueryOptions);
-  const fleetText = fleet.data
-    ? `${fleet.data.fleet.length} trucks`
-    : fleet.isError
-      ? 'failed'
-      : 'loading';
-  return (
-    <span>
-      SSE {sse} · WS {ws}
-      {wsRttMs !== null && ` (${wsRttMs} ms)`} · fleet {fleetText}
-      {fleet.isError && <button onClick={() => void fleet.refetch()}>Retry</button>}
-    </span>
   );
 }

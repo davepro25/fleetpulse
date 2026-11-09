@@ -27,7 +27,7 @@ export function checkSpeed(
 
 /**
  * A sudden drop is held back as a suspected glitch. It is accepted as real if it lasts
- * fuelGlitchConfirmMs; it is discarded if the reading recovers first. Small drops and rises
+ * fuelDropConfirmMs; it is discarded if the reading recovers first. Small drops and rises
  * (consumption, refuelling) are always accepted.
  */
 export function checkFuel(
@@ -41,7 +41,7 @@ export function checkFuel(
     return { value: raw, fault: null };
   }
   const since = prev.fault?.since ?? timestamp;
-  if (timestamp - since >= profile.fuelGlitchConfirmMs) return { value: raw, fault: null };
+  if (timestamp - since >= profile.fuelDropConfirmMs) return { value: raw, fault: null };
   return { value: trusted, fault: { kind: 'sudden_drop', since, raw } };
 }
 

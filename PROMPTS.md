@@ -159,3 +159,30 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 - truck_7 reported 999 while in `maintenance`: shown as 0 with `out_of_range`.
 - truck_3 reported fuel 0: still shown as 50.4 with `sudden_drop`.
 - A `gps_batch` for truck_11 grew its path to 21 points while samples stayed at 7.
+
+**Changed after my review of Stage 3:** while studying `checkFuel` I read the condition as inverted. The logic was right, but the name was misleading: `fuelGlitchConfirmMs` reads as "time to confirm a glitch", while it is the time after which a drop is accepted as **real**. Renamed to `fuelDropConfirmMs`, so the line reads the way it behaves.
+
+---
+
+## Stage 4: Fleet overview UI
+
+**Prompt (summary):** Build the first screen: a Leaflet map and a truck list with status colours, sensor-fault annotations and a low-fuel badge, a connection banner with a staleness indicator, and an error boundary per panel. Keep re-renders per truck.
+
+**Output:** `components/fleet/{FleetMap,TruckMarker,TruckList,statusStyle}`, `components/{ConnectionBanner,ErrorBoundary}`, `hooks/useNow`, `utils/format`, plus selectors (`useTruckIds`, `useTruck`, `isStale`) and `useTruckName`.
+
+**Deviations from the plan:**
+
+- No jsdom or Testing Library. The two UI rules worth testing (how a faulted sensor is displayed, when data counts as stale) are pure functions (`formatSensor`, `isStale`), tested in the node environment, written first and seen failing. Two fewer dev dependencies.
+- The raw faulty value is not shown even in the warning text. The plan had "(raw ignored)"; the requirement is that 999 is never displayed to the dispatcher.
+
+**Corrected:** Leaflet's `positions` rejected `number[][]`. Instead of mapping to tuples, the path points (`{lat, lng, timestamp}`) are passed as-is, since they already are `LatLngLiteral`s. `formatTime` was written and unused, so it was deleted.
+
+**Verified in the browser:**
+
+- 12 markers, one per truck, coloured by status; Truck Golf is grey (maintenance).
+- A fuel glitch on Truck Kilo showed 44 % with "Possible sensor glitch since …", and the marker got an amber ring.
+- truck_7 (Golf) sent 999: the list showed "0 km/h · Sensor fault since 15:07:33", and the string 999 never appeared anywhere in the page.
+- Selecting a truck highlights its row.
+- With the server stopped, the banner showed "Live data: no update for 18s · Dispatch link: reconnecting".
+
+**Not verified:** a forced crash inside one panel (error boundary isolation), and a React Profiler measurement of re-renders.

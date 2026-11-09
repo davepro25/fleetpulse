@@ -4,7 +4,7 @@ export interface VehicleProfile {
   /** A drop larger than this between two readings is suspected to be a sensor glitch. */
   fuelDropSuspectPct: number;
   /** A suspected drop that lasts this long is accepted as real. */
-  fuelGlitchConfirmMs: number;
+  fuelDropConfirmMs: number;
   lowFuelPct: number;
 }
 
@@ -13,7 +13,7 @@ export const PROFILES = {
     minSpeedKmh: 0,
     maxSpeedKmh: 130, // live speed is capped at 80, but batch (±5) and history (±10) jitter above it
     fuelDropSuspectPct: 5, // real consumption is ~0.02 % per reading
-    fuelGlitchConfirmMs: 10_000, // the server's glitch lasts at most 4 s
+    fuelDropConfirmMs: 10_000, // the server's glitch lasts at most 4 s
     lowFuelPct: 15,
   },
 } satisfies Record<string, VehicleProfile>;

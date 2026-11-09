@@ -407,17 +407,19 @@ Simplified from the first plan: no `FuelGuard` (the fuel state is fully a `Senso
 **Requirement IDs:** R26, R27, R28, R29, R30, R31
 **Depends on:** S3
 **Time:** build 0.75 h + review 0.5 h
-**Files:**
+**Files:** (as built)
 
-- `src/components/ui/ErrorBoundary.tsx`: class boundary with a panel-level fallback + "Retry" (reset key).
-- `src/hooks/useNow.ts`: `useNow(intervalMs): number` (one interval, cleared on unmount).
-- `src/components/fleet/statusStyle.ts`: `STATUS_STYLE: Record<TruckStatus, {color; label}>`.
 - `src/components/fleet/FleetMap.tsx`: `MapContainer` + one memo `TruckMarker` per id + `Polyline` for the selected truck's path.
-- `src/components/fleet/TruckMarker.tsx`: subscribes via `useTruck(id)`; colour = status; red ring if low fuel; dashed ring if any fault.
-- `src/components/fleet/TruckList.tsx`: memo rows: name (from fleet query, fallback id), status, `SensorReadout` speed/fuel, low-fuel badge.
-- `src/components/fleet/SensorReadout.tsx`: value + "sensor fault since hh:mm:ss (raw ignored)" note; `—` if null.
-- `src/components/fleet/ConnectionBanner.tsx`: SSE/WS status, "stale" if `now − lastTelemetryAt > 10 s`, fleet retry state ("showing data from hh:mm, retry 2/3", Retry button).
-- `src/App.tsx`: layout, `selectedTruckId` state, a boundary per panel; snapshot → `ingestSnapshot`.
+- `src/components/fleet/TruckMarker.tsx`: subscribes via `useTruck(id)`; fill = status colour; red ring if low fuel, amber ring if any sensor fault; tooltip with name.
+- `src/components/fleet/TruckList.tsx`: memo rows: name (button), status, speed and fuel with the fault note, low-fuel badge.
+- `src/components/fleet/statusStyle.ts`: `STATUS_COLOR`.
+- `src/components/ConnectionBanner.tsx`: live data (open / reconnecting / "no update for Ns"), dispatch link + RTT, truck list error + Retry.
+- `src/components/ErrorBoundary.tsx`: class boundary with "Try again"; wraps the map and the list.
+- `src/hooks/useNow.ts`: one interval, cleared on unmount.
+- `src/utils/format.ts`: `formatSensor(sensor, unit)` → `{ text, warning }`; never includes the raw faulty value.
+- `src/stores/telemetryStore.ts`: + `useTruckIds()` (numeric sort, `useShallow`), `useTruck(id)`, `isStale(lastTelemetryAt, now)`, `STALE_AFTER_MS = 10_000`.
+- `src/queries/fleet.ts`: + `useTruckName(id)` (TanStack `select`; falls back to the id).
+- `src/App.tsx`: layout, `selectedId` state, boundaries.
 
 **Design decisions:**
 
@@ -427,14 +429,14 @@ Simplified from the first plan: no `FuelGuard` (the fuel state is fully a `Senso
 
 **Steps:**
 
-- [ ] `npm i leaflet react-leaflet`; `npm i -D @types/leaflet jsdom @testing-library/react`.
+- [ ] `npm i leaflet react-leaflet`; `npm i -D @types/leaflet` (no jsdom/RTL: display logic is tested as pure functions).
 - [ ] ErrorBoundary + useNow → map → list → readout → banner → App layout.
 - [ ] Profile with React DevTools for 60 s.
 
-**Tests** (RTL, jsdom):
+**Tests** (`tests/display.test.ts`, node environment: no jsdom or Testing Library needed, the display rules are pure functions):
 
-- T-readout `SensorReadout with fault shows last plausible value and fault note, never the raw 999; null value shows "—"`.
-- T-banner `ConnectionBanner shows "stale" once now − lastTelemetryAt > 10 s and clears on the next reading`.
+- a faulted sensor shows the last valid value with a warning and never the raw value (999); a null value shows "—".
+- telemetry is stale only after more than 10 s without a reading; nothing received yet is not "stale".
 
 **Manual verification:** truck_7 grey (maintenance) and annotated during 999. Fuel glitch never shows low fuel. Kill the server: banner reconnecting → stale; restart: live. Throw in `FleetMap` temporarily: list still works.
 **DoD:** - [ ] 12 markers, one per truck, always - [ ] ≈ 1 commit per 2 s in profiler, unchanged rows not re-rendered - [ ] boundaries around map, list.
