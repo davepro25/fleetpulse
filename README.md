@@ -79,7 +79,22 @@ flowchart LR
 
 ## Handling multi-dispatcher conflicts
 
-_Stage 5._
+- **Optimistic locking.** Every status change sends `If-Match: <route _version>`, using the version the dispatcher saw when deciding (captured when the confirm dialog opens), not whatever is in the cache at send time.
+- **Who changed it.** On any 409 the client refetches `GET /api/routes` and takes the latest of `assignedAt` / `lastModifiedAt` / `reassignedAt` on that route (`lastActor`). The 409 body is never trusted: its `lastModifiedBy` ignores reassigns (it named Dana after Eli reassigned, see `tests/fixtures/rest.json`), and the processing-409 and the reassign-409 carry no actor at all.
+- **No optimistic UI, no auto-retry.** A status change shows "Saving…" through the server's 200–1000 ms delay. On a conflict the dispatcher sees who did what and decides again with fresh data.
+- **One entry point for changes.** Our own mutation results and the WS `route_*` events both go through `applyRouteChange`. The server broadcasts to the sender too, before it responds; the route version makes the second copy a no-op, so the audit log never shows a change twice.
+- **Client-side rules the server doesn't enforce:** the status lifecycle (assigned → in-progress → completed, cancel before completion), no route for a maintenance truck, no reassigning a finished route, onto a busy truck or onto the same truck.
+- **Confirm dialogs re-check live.** Complete, cancel and reassign need a confirmation. If a WS update changes the route while the dialog is open, Confirm is disabled with "Eli updated this route while this was open".
+
+| Scenario                                   | Dispatcher A                                                                                                                                       | Dispatcher B                                                                                                                                                                                                 |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Both want the same free truck              | The truck disappears from A's picker as soon as B's `route_assigned` arrives. In the remaining ms window A gets a 409: "route_4 was assigned by B" | 201; the route appears once                                                                                                                                                                                  |
+| B changes a route while A's dialog is open | Confirm disabled: "B updated this route while this was open. Cancel and review."                                                                   | Success                                                                                                                                                                                                      |
+| A's PATCH meets a stale version            | 409 → refetch → "route_1 was updated by B at 12:03:04. The list is now up to date."                                                                | Success. The server tells B nothing about A's attempt                                                                                                                                                        |
+| A completes while B reassigns (quirk 8)    | Processing-409 without an actor → refetch → "route_1 was reassigned by B" (verified in two tabs)                                                   | Reassign succeeds                                                                                                                                                                                            |
+| Reverse order: A's completion lands first  | Success                                                                                                                                            | The server has no If-Match on reassign, so B's stale reassign would move a completed route. B's dialog disables as soon as `route_updated(completed)` arrives; the remaining ms window is a known limitation |
+
+The audit log covers only changes seen since the tab opened: the server has no route-history endpoint.
 
 ## What I'd monitor in production
 

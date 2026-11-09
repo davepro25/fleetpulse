@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createIdentity, loadIdentity, validateName } from '../src/utils/identity';
+import { createIdentity, displayName, loadIdentity, validateName } from '../src/utils/identity';
 
 beforeEach(() => sessionStorage.clear());
 
@@ -12,6 +12,11 @@ describe('identity', () => {
 
     sessionStorage.setItem('fleetpulse.identity', '{broken');
     expect(loadIdentity()).toBeNull();
+  });
+
+  it('reads the name back from an id; a foreign id is shown whole', () => {
+    expect(displayName('Dana Cohen~a1b2c3d4')).toBe('Dana Cohen');
+    expect(displayName('dispatcher_9f8e7d6c')).toBe('dispatcher_9f8e7d6c');
   });
 
   it('trims names and rejects markup, the separator, too short and too long', () => {

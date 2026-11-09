@@ -454,18 +454,20 @@ Simplified from the first plan: no `FuelGuard` (the fuel state is fully a `Senso
 **Requirement IDs:** R32–R43
 **Depends on:** S4
 **Time:** build 1.5 h + review 1.0 h
-**Files:**
+**Files:** (as built)
 
-- `src/api/routes.ts`: `fetchRoutes()`; `createRoute(dispatcherId, input: RouteInput)`; `updateRouteStatus(dispatcherId, route: Pick<Route,'id'|'_version'>, status)` (always `ifMatch: route._version`); `reassignRoute(dispatcherId, routeId, newTruckId)`.
-- `src/domain/routes/transitions.ts`: `NEXT_STATUS = { assigned: ['in-progress','cancelled'], 'in-progress': ['completed','cancelled'], completed: [], cancelled: [] }`; `canTransition(from, to)`; `activeRouteForTruck(routes, truckId)`; `assignableTruckIds(trucks, routes)`; `canReassign(route, targetId, trucks, routes): { ok: true } | { ok: false; reason }`.
-- `src/domain/routes/conflicts.ts`: `interface Actor { dispatcherId; action: 'assigned'|'updated'|'reassigned'; at }`; `lastActor(route): Actor`; `describeConflict(err: HttpError, fresh: Route[], ctx: { routeId?; truckId? }): ConflictInfo`.
-- `src/domain/routes/validation.ts`: `validateRouteForm(raw, assignableIds)` → `{ ok: true; value } | { ok: false; errors }` (destination 1–120, notes ≤ 500, priority enum Q-2).
-- `src/queries/routes.ts`: `upsertRoute(routes, next)` (replace only if `next._version > existing._version`, else same ref); `applyRouteChange(qc, { route, actor, kind, at })`, the **single** path for own results and WS events (cache + audit).
-- `src/stores/auditStore.ts`: `{ entries (≤ 200, newest first); record(entry) /* ignores seen key `${routeId}@${_version}` */; clear() }`.
-- `src/hooks/useRouteMutations.ts`: `useRoutes()`, `useCreateRoute()`, `useUpdateRouteStatus()`, `useReassignRoute()`. `onSuccess → applyRouteChange`; `onError 409 → await qc.fetchQuery(routes) → describeConflict`.
-- `src/components/routes/`: `RoutesPanel`, `CreateRouteForm`, `RouteRow` (buttons only for allowed transitions; pending state while PATCH waits), `ConflictNotice`, `AuditLog`.
-- `src/components/ui/ConfirmDialog.tsx`: `{ title; body; disabledReason: string | null; onConfirm; onCancel }`.
-- `src/live.ts`: `route_assigned/updated/reassigned` → `applyRouteChange`.
+- `src/domain/routes/transitions.ts`: `nextStatuses`, `canTransition`, `isActive`, `activeRouteForTruck`, `assignableTruckIds`, `statusChangeBlockedReason`, `reassignBlockedReason`.
+- `src/domain/routes/conflicts.ts`: `lastActor(route)`, `conflictOwner(routes, { routeId } | { truckId })`.
+- `src/domain/routes/validation.ts`: `PRIORITIES`, `validateRouteForm(input, assignableIds)`.
+- `src/api/routes.ts`: `createRoute`, `updateRouteStatus` (always If-Match), `reassignRoute`.
+- `src/queries/routes.ts`: `routesQueryOptions`, `applyRouteChange(client, route)` (cache upsert by version + audit entry; actor and time come from the route itself).
+- `src/stores/auditStore.ts`: entries newest first, max 200, deduped by `routeId@version`.
+- `src/hooks/useRouteMutations.ts`: `useCreateRoute`, `useUpdateRouteStatus`, `useReassignRoute`, `RouteConflictError`, `mutationErrorMessage`.
+- `src/components/routes/`: `RoutesPanel`, `CreateRouteForm`, `RouteRow`, `AuditLog`, `TruckOption`; `src/components/ConfirmDialog.tsx`.
+- `src/utils/identity.ts`: + `displayName` (first real caller here; a foreign id is shown whole).
+- `src/live.ts`: `route_*` WS events → `applyRouteChange`.
+
+Simplified from the first plan: the 409 body is not parsed at all (who = `lastActor` of the refetched route, one path for every conflict kind); `applyRouteChange` takes only the route, because `assignedBy` / `lastModifiedBy` / `reassignedBy` and their timestamps already say who and when; the confirm dialog re-check is a pure function, so no RTL test.
 
 **Design decisions:**
 
@@ -485,22 +487,16 @@ Simplified from the first plan: no `FuelGuard` (the fuel state is fully a `Senso
 | PATCH 409 during processing (two PATCHes) | Spinner ≤ 1 s → 409 without actor → refetch → "B completed this route at …"                                                                                   | Success                                                                                                                                                                                                                                                                        |
 | PATCH racing reassign (Q8)                | A clicks Complete; B reassigns during A's delay → A gets processing-409 → "B reassigned this route to Truck Echo"                                             | Reassign succeeds. **Reverse order:** A completes first; B's reassign (no If-Match server-side) would move a completed route. B's dialog disables as soon as `route_updated(completed)` arrives; the residual ms window is a documented limitation, visible in both audit logs |
 
-**Steps (TDD for pure files):**
+**Steps:** tests first (`tests/routes.test.ts`, seen failing), then domain, cache and audit, hooks, UI, WS wiring, README conflict section.
 
-- [ ] Tests T-8, T-12, T-13 → `transitions.ts`, `conflicts.ts`, `validation.ts`.
-- [ ] Test T-10 → `cache.ts`, `auditStore.ts`.
-- [ ] Test T-7 → `api.ts`, `describeConflict`.
-- [ ] Hooks, components, ConfirmDialog; test T-16.
-- [ ] WS route events in `live.ts`; README conflict section.
+**Tests** (`tests/routes.test.ts`, 6 cases):
 
-**Tests:**
-
-- T-8 `all 16 status pairs: only the 4 allowed pass; canReassign rejects completed, cancelled, same truck, maintenance target, busy target; assignableTruckIds excludes maintenance + trucks with an active route`.
-- T-12 `lastActor returns reassignedBy when reassignedAt is latest, lastModifiedBy when it is, assignedBy when untouched`.
-- T-7 `updateRouteStatus sends If-Match "2" + X-Dispatcher-Id; 409 version fixture (lastModifiedBy=A) + fresh route reassigned by B → actor B; 409 processing fixture (no actor) → actor from fresh route`.
-- T-10 `own result then WS echo (same version) → one audit entry, cache ref unchanged on echo; echo first then result → same; older-version event ignored`.
-- T-13 `validateRouteForm trims; empty or 121-char destination rejected; unknown priority rejected; maintenance truck rejected`.
-- T-16 (RTL) `reassign ConfirmDialog: confirm enabled, then cache update to completed → confirm disabled with reason` (RF-4).
+- only the four allowed status transitions pass.
+- reassign is blocked for finished routes, the same truck, maintenance and busy trucks; `assignableTruckIds` excludes maintenance and busy trucks.
+- the create form trims, requires a destination and checks the truck, the priority enum and the notes length.
+- with the real fixtures: the 409 body names Dana, but `conflictOwner` names Eli, who reassigned after her; a truck subject finds the route occupying it.
+- applying the same route version twice (response + WS echo) keeps the same cache reference and one audit entry.
+- an older version never overwrites a newer one in the cache.
 
 **Manual verification (two tabs, two names):** run each conflict-table row. Watch the PATCH delay spinner. Reassign to truck_7 → blocked client-side. Check each tab's audit log shows both dispatchers' actions with names.
 **DoD:** - [ ] every row of the conflict table reproduced - [ ] every route change confirmed - [ ] no duplicate audit entries - [ ] all tests green.

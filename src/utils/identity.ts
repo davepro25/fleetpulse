@@ -32,3 +32,9 @@ export function loadIdentity(): Identity | null {
   const saved = IdentitySchema.safeParse(parseJson(sessionStorage.getItem(STORAGE_KEY) ?? ''));
   return saved.success ? saved.data : null;
 }
+
+/** "Dana~3f9a1c2e" → "Dana". An id from a client that doesn't use our scheme is shown whole. */
+export function displayName(dispatcherId: string): string {
+  const at = dispatcherId.lastIndexOf('~');
+  return at > 0 ? dispatcherId.slice(0, at) : dispatcherId;
+}

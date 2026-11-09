@@ -5,6 +5,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { FleetMap } from './components/fleet/FleetMap';
 import { TruckList } from './components/fleet/TruckList';
 import { IdentityGate } from './components/IdentityGate';
+import { RoutesPanel } from './components/routes/RoutesPanel';
 import { AppProvider, type AppServices } from './context/AppContext';
 import { startLive } from './live';
 import type { Identity } from './utils/identity';
@@ -39,7 +40,9 @@ function Dashboard({ identity }: { identity: Identity }) {
           <ErrorBoundary name="Truck list">
             <TruckList selectedId={selectedId} onSelect={setSelectedId} />
           </ErrorBoundary>
-          <section>Routes (Stage 5)</section>
+          <ErrorBoundary name="Routes">
+            <RoutesPanel />
+          </ErrorBoundary>
           <section>Dispatchers (Stage 6)</section>
         </aside>
         <section className="detail-panel">Truck detail (Stage 7)</section>

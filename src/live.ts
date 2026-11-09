@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { applyRouteChange } from './queries/routes';
 import { useConnectionStore } from './stores/connectionStore';
 import { useTelemetryStore } from './stores/telemetryStore';
 import type { Identity } from './utils/identity';
@@ -33,7 +34,17 @@ export function startLive({ queryClient, identity }: LiveDeps): Live {
   });
 
   const socket = openDispatcherSocket(identity, {
-    onMessage: () => {}, // Stages 5-7: routes, presence, alerts, fleet_reset
+    onMessage: (message) => {
+      switch (message.type) {
+        // Also the echo of our own changes: applyRouteChange makes the second copy a no-op.
+        case 'route_assigned':
+        case 'route_updated':
+        case 'route_reassigned':
+          applyRouteChange(queryClient, message.route);
+          break;
+        // Stages 6-7: presence, alerts, fleet_reset.
+      }
+    },
     onStatus: (ws) => useConnectionStore.setState({ ws }),
     onRtt: (wsRttMs) => useConnectionStore.setState({ wsRttMs }),
     onReconnected: () => refetch('routes'),

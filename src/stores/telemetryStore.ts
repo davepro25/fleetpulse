@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import type { SseGpsBatch, SseTelemetry } from '../contracts';
+import type { SseGpsBatch, SseTelemetry, TruckStatus } from '../contracts';
 import { applyTelemetry, type FleetLive, type TruckLive } from '../domain/telemetry/pipeline';
 
 /** Telemetry normally arrives every 2 s; five missed ticks means the data on screen is old. */
@@ -40,3 +40,11 @@ export const useTruckIds = (): string[] =>
 /** Re-renders only when this truck's object changes. */
 export const useTruck = (id: string): TruckLive | undefined =>
   useTelemetryStore((state) => state.fleet[id]);
+
+/** id → live status, for "which trucks can take a route". Stable while no status changes. */
+export const useTruckStatuses = (): Record<string, TruckStatus> =>
+  useTelemetryStore(
+    useShallow((state) =>
+      Object.fromEntries(Object.values(state.fleet).map((truck) => [truck.id, truck.status])),
+    ),
+  );

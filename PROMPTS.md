@@ -186,3 +186,31 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 - With the server stopped, the banner showed "Live data: no update for 18s · Dispatch link: reconnecting".
 
 **Not verified:** a forced crash inside one panel (error boundary isolation), and a React Profiler measurement of re-renders.
+
+---
+
+## Stage 5: Route management
+
+**Prompt (summary):** Route creation, status changes with `If-Match`, reassign, confirmation dialogs, client-side validation, a 409 UX that names who made the conflicting change, and an audit log built from WS events plus our own results. Pure rules tested first.
+
+**Output:** `domain/routes/{transitions,conflicts,validation}`, `api/routes`, `queries/routes` (`applyRouteChange`), `stores/auditStore`, `hooks/useRouteMutations`, `components/routes/*`, `ConfirmDialog`. 6 new tests, written first and seen failing.
+
+**Simplified from the plan:**
+
+- The 409 body is not parsed at all. "Who" always comes from `lastActor` of the refetched route. That's one path for create, version, processing and reassign conflicts, and it can't repeat the server's `lastModifiedBy` mistake (Stage 0 fixture: the body names Dana, Eli reassigned).
+- `applyRouteChange(client, route)` takes only the route: `assignedBy` / `lastModifiedBy` / `reassignedBy` and their timestamps already say who and when. It is the single path for our own results and WS echoes, and the version makes the second copy a no-op.
+- The audit dedupe checks the stored entries (max 200) instead of keeping a separate set of seen keys, which would grow forever.
+- The confirm-dialog re-check is a pure function (`statusChangeBlockedReason`, `reassignBlockedReason` + a version check), so no React Testing Library.
+
+**Bug caught while designing, before it was written:** the first idea sent the route's _current_ cached `_version` when the dispatcher pressed Confirm. If another dispatcher changed the route while the dialog was open, that would send the _new_ version and silently overwrite their change, defeating optimistic locking. Fix: capture the version when the dialog opens, send that as `If-Match`, and disable Confirm if the route's version moved meanwhile.
+
+**Corrected in the tests:** a first version looped over "response first / echo first", but both copies are identical, so the loop proved nothing. Replaced by one honest test: the same change applied twice is a no-op.
+
+**Defaults taken for open questions:** priority `low | normal | high`; destination free text, 1–120 characters.
+
+**Verified with two tabs (Dana, Eli):**
+
+- Dana's route appears once in both tabs. Dana sees "You assigned…", Eli sees "Dana assigned…", and Truck Delta leaves both pickers.
+- Eli starts the route while Dana's "Cancel route" dialog is open: Confirm disables with "Eli updated this route while this was open".
+- Quirk 8: Dana confirms Complete, and Eli reassigns during the PATCH delay. Dana gets the actor-less processing-409, and after the refetch sees "route_1 was reassigned by Eli at 16:05:12".
+- Truck Golf (maintenance) and busy trucks never appear in the create or "Move to" pickers.
