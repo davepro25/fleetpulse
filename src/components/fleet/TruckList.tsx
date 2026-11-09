@@ -5,6 +5,7 @@ import { PROFILES } from '../../domain/telemetry/profiles';
 import { useTruckName } from '../../queries/fleet';
 import { useTruck, useTruckIds } from '../../stores/telemetryStore';
 import { formatSensor } from '../../utils/format';
+import { ViewerBadge } from '../presence/ViewerBadge';
 import { Badge, Muted } from '../ui';
 import { TabCount } from '../SidebarTabs';
 import { TRUCK_STATUS_TONE } from './statusStyle';
@@ -79,7 +80,8 @@ const TruckRow = memo(function TruckRow({
           onClick={() => onSelect(id)}
         >
           {name}
-        </button>
+        </button>{' '}
+        <ViewerBadge truckId={id} />
       </td>
       <td className="px-2 py-1.5">
         <Badge tone={TRUCK_STATUS_TONE[truck.status]} dot>

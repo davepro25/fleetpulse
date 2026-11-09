@@ -20,6 +20,8 @@ export interface DispatcherSocketHandlers {
 export interface DispatcherSocket {
   /** Remembered and re-sent after every reconnect. */
   sendViewing(truckId: string | null): void;
+  /** Re-sends the remembered truck, even null, so a dispatcher who just joined learns about us. */
+  announceViewing(): void;
   reregister(): void;
   close(): void;
 }
@@ -114,6 +116,7 @@ export function openDispatcherSocket(
       viewing = truckId;
       send({ type: 'viewing_truck', truckId });
     },
+    announceViewing: () => send({ type: 'viewing_truck', truckId: viewing }),
     reregister: register,
     close() {
       closedByUser = true;

@@ -685,3 +685,5 @@ Circuit breaker and every bonus feature · form library · router · CSS framewo
 - `getJson` / `sendJson` removed: ky 2 validates with `.json(schema)` (Standard Schema, zod 4). `api/http.ts` holds only the ky instance; `api/fleet.ts` and `api/routes.ts` call it directly.
 - All URLs and header names in `api/endpoints.ts`; cache keys in `queries/keys.ts` (live.ts invalidates with them instead of loose strings).
 - Components never call `useQuery` / `useMutation` directly: queries are hooks in `queries/*` (options stay private), mutations are hooks in `mutations/*`.
+
+- **Stage 6 as built:** the reducer is `domain/presence.ts` (`applyPresence`, roster as a plain object), the store is `stores/presenceStore.ts`, one `ViewerBadge` component; the socket gained `announceViewing()` so a reply-to-join also reports "no truck".

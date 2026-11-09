@@ -274,3 +274,24 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 - **Follow-up: is the profile parameter worth it?** I asked whether a plain const map would be simpler than passing a profile. Outcome: `profileFor(truckId)` was deleted. It took a truck id and ignored it, which misleads a reader. Call sites now use `PROFILES.truck` directly, with one comment that the API has no vehicle type. The `PROFILES` map and the `profile` parameter stay: without the parameter, adding a "van" would mean changing `checkSpeed` / `checkFuel`, which is exactly what the evaluation question asks to avoid, and the profile test would need a mock.
 
 - **Follow-up: Dashboard, live.ts and naming.** `Dashboard` moved to `src/pages/Dashboard.tsx`; `App.tsx` only holds the identity gate. `startLive` now takes `(queryClient, identity)` and delegates to two named handlers (`handleTelemetry`, `handleDispatch`); an SSE reconnect invalidates every query instead of a hand-made list of keys. `closeStream` and `socket` stay local to `startLive`: `stop()` must close exactly the connections this call opened (module-level variables would be shared by React StrictMode's double mount and by a sign-out followed by a sign-in). The context value `services` / `AppServices` was renamed to `session` / `Session` (`SessionContext`, `useSession`): it is not data to load, it is who is signed in plus the socket opened for them. Kept on purpose: the `telemetryStore` name, Zustand's `use…Store` convention, the numeric sort of ids, and names coming from the fleet query instead of the store.
+
+## Stage 6: Dispatcher presence
+
+**Prompt (summary):** Show the other dispatchers online and which truck each one is viewing, correct despite the missing roster message, ghost leaves (quirk 6) and `fleet_reset`.
+
+**Output:** `domain/presence.ts` (pure `applyPresence`, `GHOST_GRACE_MS`), `stores/presenceStore` (`useViewersOf`), `components/presence/{DispatcherRoster,ViewerBadge}`, `live.ts` wiring and `handleFleetReset`, `socket.announceViewing()`, `telemetryStore.reset()`. 6 new tests (38 total), written first and seen failing.
+
+**Simplified from the plan:**
+
+- The roster is a plain object, not a `Map`, so it works with Zustand's `useShallow` and JSON like the other stores.
+- One badge component instead of `ViewerBadges` in two places: the map tooltip only needs the names as text.
+- The ghost test uses the real capture from Stage 0 (`ghostLeaveAfterReconnect`: join, then the leave 10 011 ms later) rather than invented timestamps.
+
+**Found while wiring:** `openDispatcherSocket` re-sent the viewed truck only when it was not null. A reply-to-join must also say "viewing nothing", or the newcomer never learns about a dispatcher who has no truck selected. Added `announceViewing()`, which always sends the remembered value.
+
+**Verified with two tabs (Dana, Eli):**
+
+- Eli opened second and saw Dana at once (reply-to-join). Dana selected Truck Charlie: Eli's roster showed "Dana viewing Truck Charlie" and the row had a "Dana" badge.
+- Dana signed out: Eli removed her within 7 ms (normal leave, outside the grace window).
+- `POST /api/reset`: both tabs showed 0 routes and 0 activity, and each roster had the other dispatcher back within 2.5 s.
+- Not reproduced live: the ghost leave itself (20% random). It is covered by the test that replays the captured sequence.

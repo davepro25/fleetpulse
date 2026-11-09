@@ -6,6 +6,7 @@ import { FleetMap } from '../components/fleet/FleetMap';
 import { TruckCount, TruckList } from '../components/fleet/TruckList';
 import { ActivityCount, AuditLog } from '../components/routes/AuditLog';
 import { ActiveRouteCount, RoutesPanel } from '../components/routes/RoutesPanel';
+import { DispatcherCount, DispatcherRoster } from '../components/presence/DispatcherRoster';
 import { SidebarTabs } from '../components/SidebarTabs';
 import { Muted, Panel } from '../components/ui';
 import { SessionProvider, type Session } from '../context/SessionContext';
@@ -29,6 +30,9 @@ export function Dashboard({ identity, onSignOut }: Props) {
     setSession({ identity, socket: live.socket });
     return live.stop;
   }, [queryClient, identity]);
+
+  // Tell the other dispatchers which truck we are looking at.
+  useEffect(() => session?.socket.sendViewing(selectedId), [session, selectedId]);
 
   if (!session) return null;
 
@@ -90,7 +94,12 @@ export function Dashboard({ identity, onSignOut }: Props) {
                 {
                   id: 'dispatchers',
                   label: 'Dispatchers',
-                  content: <Muted>Presence arrives in Stage 6.</Muted>,
+                  count: <DispatcherCount />,
+                  content: (
+                    <ErrorBoundary name="Dispatchers">
+                      <DispatcherRoster />
+                    </ErrorBoundary>
+                  ),
                 },
               ]}
             />

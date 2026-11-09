@@ -78,6 +78,8 @@ flowchart LR
 | Plain validation functions                                                              | form library                                | three small forms                                                                                                                                                                                                     |
 | Arrays + `appendCapped` (N = 150)                                                       | RingBuffer class                            | tiny N, immutable updates suit Zustand                                                                                                                                                                                |
 | Route `_version` for locking                                                            | truck `_version`                            | truck version bumps on every simulation tick                                                                                                                                                                          |
+| Reply-to-join for the roster                                                            | periodic presence heartbeat                 | the server has no roster message; answering each join fills the newcomer's list at once, with no timers and no constant traffic                                                                                       |
+| 12 s grace for leaves after a join                                                      | re-register when we see our own leave       | the observer can't tell a late leave from a real one (no connection id). Cost: someone who really leaves within 12 s of rejoining stays listed until the next reconnect or reset                                      |
 | RTL + jsdom only for UI-behaviour tests                                                 | Playwright e2e                              | a handful of UI tests; logic is tested as pure functions                                                                                                                                                              |
 
 ## Handling multi-dispatcher conflicts
@@ -98,6 +100,14 @@ flowchart LR
 | Reverse order: A's completion lands first  | Success                                                                                                                                            | The server has no If-Match on reassign, so B's stale reassign would move a completed route. B's dialog disables as soon as `route_updated(completed)` arrives; the remaining ms window is a known limitation |
 
 The audit log covers only changes seen since the tab opened: the server has no route-history endpoint.
+
+## Dispatcher presence
+
+- **Who is online.** The server never sends a newcomer the list of dispatchers already online: `dispatcher_joined` goes to everyone except the one who joined. So every client answers a `dispatcher_joined` with its own `viewing_truck` (null if it views nothing), and the newcomer learns everyone from those replies (**reply-to-join**). No periodic heartbeat, no timers.
+- **Who views which truck.** Selecting a truck sends `viewing_truck`; others show the name on the truck's row and in the map tooltip. The socket re-sends it after a reconnect.
+- **Ghosts (quirk 6).** 20% of leaves arrive 10 s late. If a dispatcher reloaded in the meantime, that late leave would remove someone who is online again. A leave that arrives less than 12 s (`GHOST_GRACE_MS`) after that dispatcher's join is ignored. Leaves for unknown ids and repeated leaves change nothing. Our own late leave (it arrives on our new socket) is ignored.
+- **Our own reconnect.** Leaves sent while we were offline are lost, so the roster is cleared and refills from the replies to our new join.
+- **`fleet_reset`.** The server forgets every dispatcher, restarts route ids at `route_1` (version 1) and moves every truck, while sockets stay open. The client clears routes, audit log, roster and telemetry, refetches, and registers again, so peers re-learn each other through reply-to-join. Without clearing, the old `route_1` v3 would hide the new `route_1` v1 (the version check would treat it as older).
 
 ## What I'd monitor in production
 

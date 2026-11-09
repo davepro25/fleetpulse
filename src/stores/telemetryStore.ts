@@ -11,6 +11,7 @@ interface TelemetryState {
   /** Client clock, for staleness: the server's timestamps are not comparable to ours. */
   lastTelemetryAt: number | null;
   ingest(message: SseTelemetry | SseGpsBatch, receivedAt: number): void;
+  reset(): void;
 }
 
 // shortcut: one store update per SSE message (the server sends at most 2 per 2 s tick).
@@ -23,6 +24,8 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
       fleet: applyTelemetry(state.fleet, message),
       lastTelemetryAt: message.type === 'telemetry' ? receivedAt : state.lastTelemetryAt,
     })),
+  // Keeps lastTelemetryAt: the stream itself did not stop.
+  reset: () => set({ fleet: {} }),
 }));
 
 export function isStale(lastTelemetryAt: number | null, now: number): boolean {

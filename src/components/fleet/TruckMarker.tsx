@@ -3,6 +3,7 @@ import { CircleMarker, Tooltip } from 'react-leaflet';
 import { isLowFuel } from '../../domain/telemetry/detectors';
 import { PROFILES } from '../../domain/telemetry/profiles';
 import { useTruckName } from '../../queries/fleet';
+import { useViewersOf } from '../../stores/presenceStore';
 import { useTruck } from '../../stores/telemetryStore';
 import { MARKER_RING, STATUS_COLOR } from './statusStyle';
 
@@ -15,6 +16,7 @@ interface Props {
 export const TruckMarker = memo(function TruckMarker({ id, selected, onSelect }: Props) {
   const truck = useTruck(id);
   const name = useTruckName(id);
+  const viewers = useViewersOf(id);
   if (!truck) return null;
 
   const lowFuel = isLowFuel(truck.fuel, PROFILES.truck);
@@ -40,6 +42,7 @@ export const TruckMarker = memo(function TruckMarker({ id, selected, onSelect }:
         {name} · {truck.status}
         {lowFuel && ' · low fuel'}
         {sensorFault && ' · sensor fault'}
+        {viewers.length > 0 && ` · viewed by ${viewers.join(', ')}`}
       </Tooltip>
     </CircleMarker>
   );
