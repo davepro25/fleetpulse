@@ -1,4 +1,4 @@
-// Every server address the app uses. Same origin: the Vite proxy forwards /api and /ws to :3000.
+// Same origin: the Vite proxy forwards /api and /ws to :3000.
 export const API = {
   fleet: '/api/fleet',
   truck: (truckId: string) => `/api/fleet/${encodeURIComponent(truckId)}`,
@@ -12,7 +12,6 @@ export const API = {
 } as const;
 
 export const HEADER = {
-  /** Required on every mutation; the server trusts it as the dispatcher's identity. */
   dispatcher: 'X-Dispatcher-Id',
   /** Route _version as a bare integer: the server parseInt()s it. */
   ifMatch: 'If-Match',

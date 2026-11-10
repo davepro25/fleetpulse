@@ -1,9 +1,7 @@
 export interface VehicleProfile {
   minSpeedKmh: number;
   maxSpeedKmh: number;
-  /** A drop larger than this between two readings is suspected to be a sensor glitch. */
   fuelDropSuspectPct: number;
-  /** A suspected drop that lasts this long is accepted as real. */
   fuelDropConfirmMs: number;
   lowFuelPct: number;
 }

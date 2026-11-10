@@ -57,7 +57,6 @@ export function RouteRow({ route, routes, statuses }: Props) {
     }
   };
 
-  // Starting a route is routine; completing, cancelling and reassigning need a confirmation.
   const choose = (action: PendingAction) =>
     action.type === 'status' && action.to === 'in-progress' ? run(action) : setPending(action);
 

@@ -7,7 +7,6 @@ export type StreamStatus = 'connecting' | 'open' | 'reconnecting';
 export interface TelemetryStreamHandlers {
   onMessage(message: SseMessage): void;
   onStatus(status: StreamStatus): void;
-  /** Opened after any failure. The server has no replay, so callers must refetch state. */
   onReconnected(): void;
 }
 
@@ -33,7 +32,6 @@ export function openTelemetryStream(
     };
 
     es.onmessage = (event: MessageEvent<string>) => {
-      // Bad JSON and a wrong shape are the same case: drop the frame, keep the stream.
       let message: SseMessage;
       try {
         message = SseMessageSchema.parse(JSON.parse(event.data));
@@ -41,7 +39,6 @@ export function openTelemetryStream(
         console.warn('Dropped invalid SSE frame', event.data);
         return;
       }
-      // Outside the try, so a bug in a handler is not reported as a bad frame.
       handlers.onMessage(message);
     };
 

@@ -26,7 +26,6 @@ export function DispatcherRoster() {
   );
 }
 
-/** Other dispatchers online (we are not counted). */
 export function DispatcherCount() {
   return <TabCount value={usePresenceStore((state) => Object.keys(state.roster).length)} />;
 }

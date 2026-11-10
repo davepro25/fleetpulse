@@ -5,7 +5,6 @@ import type { TruckAlert } from '../contracts';
 const MAX_ALERTS = 50;
 
 interface AlertState {
-  /** Newest first. Only alerts seen since this tab connected: the server keeps none. */
   alerts: TruckAlert[];
   add(alert: TruckAlert): void;
   clear(): void;

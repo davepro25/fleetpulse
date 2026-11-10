@@ -33,7 +33,6 @@ export function Dashboard({ identity, onSignOut }: Props) {
     return live.stop;
   }, [queryClient, identity]);
 
-  // Tell the other dispatchers which truck we are looking at.
   useEffect(() => session?.socket.sendViewing(selectedId), [session, selectedId]);
 
   if (!session) return null;
@@ -41,15 +40,16 @@ export function Dashboard({ identity, onSignOut }: Props) {
   return (
     <SessionProvider value={session}>
       <div className="flex min-h-screen flex-col lg:h-screen">
-        <ConnectionBanner
-          dispatcherName={identity.name}
-          onSignOut={() => {
-            // Both lists describe "since this tab connected" for the previous identity.
-            useAuditStore.getState().clear();
-            useAlertStore.getState().clear();
-            onSignOut();
-          }}
-        />
+        <ErrorBoundary name="Connection status">
+          <ConnectionBanner
+            dispatcherName={identity.name}
+            onSignOut={() => {
+              useAuditStore.getState().clear();
+              useAlertStore.getState().clear();
+              onSignOut();
+            }}
+          />
+        </ErrorBoundary>
 
         <div className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_500px]">
           <div className="flex min-h-0 flex-col gap-3">
@@ -60,7 +60,6 @@ export function Dashboard({ identity, onSignOut }: Props) {
             </div>
             <div className="lg:max-h-[50%] lg:overflow-y-auto">
               {selectedId ? (
-                // key: a crash in one truck's panel is forgotten when another truck is opened.
                 <ErrorBoundary key={selectedId} name="Truck details">
                   <TruckDetail id={selectedId} />
                 </ErrorBoundary>

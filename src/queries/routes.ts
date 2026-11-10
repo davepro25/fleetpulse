@@ -19,7 +19,6 @@ export function useActiveRouteCount(): number {
   return useQuery({ ...routesQuery, select: (routes) => routes.filter(isActive).length }).data ?? 0;
 }
 
-/** Fetch the current list now, ignoring the cache (used after a 409 to see who changed what). */
 export function refetchRoutes(client: QueryClient): Promise<Route[]> {
   return client.fetchQuery({ ...routesQuery, staleTime: 0 });
 }

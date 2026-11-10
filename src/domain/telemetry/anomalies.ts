@@ -15,12 +15,9 @@ export interface SensorAnomaly {
   truckId: string;
   sensor: (typeof SENSORS)[number];
   kind: SensorFault['kind'];
-  /** Sensor clock, like every telemetry timestamp. */
   since: number;
   until: number | null;
-  /** The first impossible or suspicious reading. */
   raw: number;
-  /** The value shown instead of it. */
   lastGood: number | null;
   outcome: 'ongoing' | 'sensor_glitch' | 'confirmed';
 }

@@ -17,7 +17,6 @@ export interface AuditEntry {
 }
 
 interface AuditState {
-  /** Newest first. Only changes seen since this tab connected: the server has no history. */
   entries: AuditEntry[];
   record(entry: AuditEntry): void;
   clear(): void;

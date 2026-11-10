@@ -7,13 +7,11 @@ export interface Tab {
   content: ReactNode;
 }
 
-// Inactive tabs stay mounted (hidden), so a half-filled form or an open dialog survives a switch.
 export function SidebarTabs({ tabs }: { tabs: Tab[] }) {
   const [active, setActive] = useState(tabs[0]?.id);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const baseId = useId();
 
-  // Arrow keys move between tabs (WAI-ARIA tabs pattern).
   const onKeyDown = (event: KeyboardEvent, index: number) => {
     const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
     if (!step) return;
@@ -24,7 +22,6 @@ export function SidebarTabs({ tabs }: { tabs: Tab[] }) {
 
   return (
     <div className="flex min-h-0 flex-col rounded-lg bg-white ring-1 ring-slate-200">
-      {/* Wraps instead of overflowing: five tabs plus counts can be wider than the sidebar. */}
       <div role="tablist" className="m-3 mb-0 flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1">
         {tabs.map((tab, index) => {
           const selected = tab.id === active;

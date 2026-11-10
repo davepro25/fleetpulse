@@ -8,18 +8,14 @@ const PING_INTERVAL_MS = 15_000;
 const PONG_TIMEOUT_MS = 10_000;
 
 export interface DispatcherSocketHandlers {
-  /** Every valid inbound message except pong, which the socket handles itself. */
   onMessage(message: WsInbound): void;
   onStatus(status: StreamStatus): void;
   onRtt(ms: number): void;
-  /** Opened after any failure: events were missed, so callers must refetch state. */
   onReconnected(): void;
 }
 
 export interface DispatcherSocket {
-  /** Remembered and re-sent after every reconnect. */
   sendViewing(truckId: string | null): void;
-  /** Re-sends the remembered truck, even null, so a dispatcher who just joined learns about us. */
   announceViewing(): void;
   reregister(): void;
   close(): void;
@@ -92,7 +88,6 @@ export function openDispatcherSocket(
     };
 
     socket.onmessage = (event: MessageEvent<string>) => {
-      // Bad JSON and a wrong shape are the same case: drop the message, keep the socket.
       let message: WsInbound;
       try {
         message = WsInboundSchema.parse(JSON.parse(event.data));

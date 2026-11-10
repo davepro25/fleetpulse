@@ -3,7 +3,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { applyPresence, type PresenceMessage, type Roster } from '../domain/presence';
 
 interface PresenceState {
-  /** Other dispatchers; never ourselves. */
   roster: Roster;
   apply(message: PresenceMessage, now: number, selfId: string): void;
   clear(): void;
@@ -16,7 +15,6 @@ export const usePresenceStore = create<PresenceState>((set) => ({
   clear: () => set({ roster: {} }),
 }));
 
-/** Names of the other dispatchers looking at this truck. */
 export const useViewersOf = (truckId: string): string[] =>
   usePresenceStore(
     useShallow((state) =>

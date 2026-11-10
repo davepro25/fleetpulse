@@ -5,7 +5,6 @@ import { useTelemetryStore, useTruck, useTruckIds } from '../../stores/telemetry
 import { MARKER_RING, STATUS_COLOR } from './statusStyle';
 import { TruckMarker } from './TruckMarker';
 
-// The mock server keeps every truck near its CITY_CENTER (Tel Aviv).
 const TEL_AVIV: [number, number] = [32.0853, 34.7818];
 
 interface Props {
@@ -42,7 +41,6 @@ function SelectedPath({ id }: { id: string }) {
   return <Polyline positions={truck.path} pathOptions={{ color: '#4f46e5', weight: 3 }} />;
 }
 
-/** Pans once per selection, not on every position update. */
 function PanToSelected({ id }: { id: string }) {
   const map = useMap();
   useEffect(() => {

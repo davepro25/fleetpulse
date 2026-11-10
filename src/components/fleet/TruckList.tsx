@@ -102,7 +102,6 @@ const TruckRow = memo(function TruckRow({
   );
 });
 
-/** Short label in the table; the full explanation is in the tooltip. */
 function FaultBadge({ fault, detail }: { fault: SensorFault | null; detail: string | null }) {
   if (!fault || !detail) return null;
   return (

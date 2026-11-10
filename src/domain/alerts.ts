@@ -1,6 +1,5 @@
 import type { SendAlertRequest } from '../contracts';
 
-// The server accepts any severity (and fills in 'info' when empty); the client limits the choice.
 export const SEVERITIES = ['info', 'warning', 'critical'] as const;
 
 const MESSAGE_MAX = 200;

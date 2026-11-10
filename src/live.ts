@@ -11,8 +11,6 @@ import { usePresenceStore } from './stores/presenceStore';
 import { useTelemetryStore } from './stores/telemetryStore';
 import type { Identity } from './utils/identity';
 
-// Composition root: the one place that routes every server message into stores and caches.
-
 export interface Live {
   socket: DispatcherSocket;
   stop(): void;

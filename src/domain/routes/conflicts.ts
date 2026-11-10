@@ -7,7 +7,6 @@ export interface Actor {
   at: number;
 }
 
-/** Whoever touched the route last: the latest of assigned, updated and reassigned. */
 export function lastActor(route: Route): Actor {
   const candidates: (Actor | null)[] = [
     { dispatcherId: route.assignedBy, action: 'assigned', at: route.assignedAt },

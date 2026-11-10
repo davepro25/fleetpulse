@@ -5,7 +5,6 @@ export interface Peer {
   id: string;
   name: string;
   viewingTruckId: string | null;
-  /** Client clock when we saw this dispatcher join; null if we only saw them viewing. */
   joinedAt: number | null;
 }
 
@@ -19,7 +18,6 @@ export type PresenceMessage = Extract<
 /** The server delays 20% of leaves by 10 s (quirk 6); 2 s of margin for network and timers. */
 export const GHOST_GRACE_MS = 12_000;
 
-/** Unchanged input returns the same object, so subscribers don't re-render. */
 export function applyPresence(
   roster: Roster,
   message: PresenceMessage,

@@ -8,7 +8,6 @@ export function useSendAlert(truckId: string) {
   const { identity } = useSession();
   return useMutation({
     mutationFn: (alert: SendAlertRequest) => sendAlert(identity.id, truckId, alert),
-    // Shown at once, even if the WS echo is late or the socket is down.
     onSuccess: (alert) => useAlertStore.getState().add(alert),
   });
 }

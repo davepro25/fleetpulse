@@ -2,10 +2,6 @@ import { HTTPError } from 'ky';
 import { displayName } from '../utils/identity';
 import { RouteConflictError } from './routes';
 
-/**
- * The one place a failed mutation (route or alert) becomes a sentence for the dispatcher.
- * Server error strings are shown as text, never as HTML.
- */
 export function mutationErrorMessage(error: unknown, selfId: string): string {
   if (error instanceof RouteConflictError) {
     const { route, actor } = error.owner;

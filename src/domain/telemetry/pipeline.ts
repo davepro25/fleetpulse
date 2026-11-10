@@ -79,7 +79,6 @@ export function applySnapshot(fleet: FleetLive, snapshot: FleetSnapshot): FleetL
   if (missing.length === 0) return fleet;
   const next: Record<string, TruckLive> = { ...fleet };
   for (const truck of missing) {
-    // The snapshot is a reading too: same fields, taken at the snapshot's time.
     const reading = { ...truck, truckId: truck.id, timestamp: snapshot.timestamp };
     next[truck.id] = advance(newTruck(reading), reading);
   }
@@ -159,7 +158,6 @@ function groupByTruck(readings: TelemetryReading[]): Map<string, TelemetryReadin
   return groups;
 }
 
-/** Sorted by timestamp, one item per timestamp, newest BUFFER_CAP kept. */
 function mergeByTimestamp<T extends { timestamp: number }>(existing: T[], incoming: T[]): T[] {
   const merged = [...existing, ...incoming].sort((a, b) => a.timestamp - b.timestamp);
   return merged

@@ -9,7 +9,6 @@ const fleetQuery = queryOptions({
   queryKey: QUERY_KEYS.fleet,
   queryFn: async ({ signal }) => {
     const snapshot = await fetchFleet(signal);
-    // The sensor checks' baseline for trucks with no live reading yet (see applySnapshot).
     useTelemetryStore.getState().ingestSnapshot(snapshot);
     return snapshot;
   },
@@ -24,7 +23,6 @@ export function useFleet() {
   });
 }
 
-/** id → display name. Telemetry has no names; until the snapshot loads, the id is shown. */
 export function useTruckName(id: string): string {
   const { data } = useQuery({
     ...fleetQuery,
@@ -33,7 +31,6 @@ export function useTruckName(id: string): string {
   return data ?? id;
 }
 
-// Fetched when a truck is opened. Mileage does not change in the simulation, so no polling.
 export function useTruckDetail(truckId: string) {
   return useQuery({
     queryKey: QUERY_KEYS.truck(truckId),

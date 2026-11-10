@@ -46,7 +46,6 @@ export function useUpdateRouteStatus() {
   const client = useQueryClient();
   const { identity } = useSession();
   return useMutation({
-    /** `version` is the one the dispatcher saw when deciding, sent as If-Match. */
     mutationFn: ({
       routeId,
       version,

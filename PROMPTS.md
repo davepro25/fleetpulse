@@ -345,3 +345,45 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 **Observed:** some fuel glitches lasted 8 s, because the server can start a new glitch right after one ends. The confirm window is 10 s, so the margin is thinner than the "4 s maximum" in `server.js` suggests; it goes into Known issues in Stage 8.
 
 - **Follow-up: a 0 % glitch as the very first reading.** Found in review: with no trusted value yet, `checkFuel` accepted a first reading of 0, so low fuel showed until the next reading, and the next reading (back to 42) passed as a refuel, so the Sensors log missed it too. Fix: `applySnapshot` gives trucks a baseline from `GET /api/fleet` (taken from the tank state, never glitched) before their first SSE reading. Rejected: special-casing 0 (detect, don't special-case), or hiding every first reading until a second one agrees ("—" on all trucks for 2 s). Remaining gap: if SSE beats the snapshot (for example while `/api/fleet` is retrying a 503), that truck has no baseline; it goes into Known issues.
+
+## Stage 8: Hardening and docs
+
+**Prompt (summary):** Prove the app holds up over hours, audit cleanup and safety, check a fresh clone, and finish the README and this journal.
+
+**Audits:**
+
+- **Cleanup:** every long-lived resource has a teardown. `EventSource` and its reconnect timer close in `sse.ts`; the socket and its ping, pong and reconnect timers in `ws.ts` (`stopTimers`, `close`); the banner clock in `useNow`; both connections in `live.ts` `stop`, which the `Dashboard` effect returns. There is no `addEventListener` in `src`, and stores are used only through hooks.
+- **Safety:** no `dangerouslySetInnerHTML`, `innerHTML` or `eval`; server strings are always rendered as text. `src/domain` imports no React, Zustand or TanStack. All four mutations send `X-Dispatcher-Id`.
+- **Found:** the connection banner was the only panel without an `ErrorBoundary`, so a crash there would blank the whole screen. It now has one.
+- **Fresh clone:** cloned from GitHub into an empty folder: `npm install` (0 vulnerabilities) and `npm test` (49 passed) work; `server.js` has the sha256 recorded in Stage 0. `npm start` from the clone could not bind ports 3000 and 5173 because the dev servers were already running; the running ones were started with the same command.
+
+**Soak (2 h, two tabs, 16:58 to 18:58):** SoakA's heap went from 48.0 MB to 51.6–58.3 MB (sawtooth between garbage collections), SoakB's from 78.8 MB to 53.7 MB. Samples and path points stopped at 150 per truck, the sensor log at 200, and no tab opened a second `EventSource` or `WebSocket`. Numbers are from the dev build; the table is in the README ("Long-run check").
+
+## Summary: what the AI got wrong, and how it was caught
+
+The AI wrote most of the code. These are the places where its output was wrong or heavier than needed, grouped by how they were caught.
+
+**Caught by reading `server.js` and capturing real data first (Stage 0).** The plan was checked against the server's code and against captured payloads before any app code existed. That turned several of my assumptions around (`Retry-After` unreadable cross-origin, the 409 naming the wrong dispatcher after a reassign, batch speeds above 80) and gave every quirk test a real input instead of an invented one.
+
+**Caught by my reviews: more code than the problem needed.**
+
+- Hand-written type guards (165 lines) instead of zod; an own fetch wrapper, then `getJson` / `sendJson`, instead of ky's retry and `.json(schema)`; a `parseJson` util for one `JSON.parse`.
+- A `server.js` hash test and a split tsconfig, both solving a problem a `git diff` check already solved.
+- `profileFor(truckId)`, which ignored its argument; `statusChangeBlockedReason`, which could never fail behind the version check; five unused 409 contracts.
+- 31 transport tests slimmed to 15 that each prove one behaviour.
+
+**Caught by tests written first and seen failing.** The circuit breaker first refused retries in `beforeRetry`; the test hung, because ky waits the full `Retry-After` before calling that hook. The telemetry fixes (5 % floor, first reading) also started with a test that reproduced the bug before the code changed.
+
+**Caught by tests that proved too little.** A fixture test compared only `type`; a "both arrival orders" test looped over two identical copies; a path-order check sorted numbers as strings. Each was rewritten to assert the real behaviour.
+
+**Caught only by running the app.** These passed the tests and failed in the browser or against the live server:
+
+- Reconnect handling fired only on a _second_ open, so starting the client before the server left the snapshot failed forever (Stage 2).
+- A reply-to-join never said "viewing nothing" (Stage 6).
+- The fuel glitch at the server's 5 % floor is a drop of exactly 5, which `>=` accepted (seen live: Truck Bravo at 0 %).
+- A 0 % glitch as the very first reading after page load was accepted (found in my own code review).
+- The fifth sidebar tab pushed "Dispatchers" outside the panel (seen by me on screen).
+
+**Process mistakes.** A staged Stage 5 commit did not compile (it held a half-applied rename); it was rebuilt and verified in a separate checkout before committing. Orphaned `node` processes once made a manual check pass falsely. Since then every claim of "works" in this journal comes from a run I watched, with the numbers written down.
+
+**What I would do the same way again:** capture real payloads before writing code, keep the domain logic pure so the quirks are tested without React or timers, and verify every stage in the browser against the real server, not only in tests.

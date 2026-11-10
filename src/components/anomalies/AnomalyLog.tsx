@@ -39,7 +39,6 @@ export function AnomalyCount() {
   return <TabCount value={useTelemetryStore((state) => state.anomalies.length)} />;
 }
 
-/** Per truck: a truck with many glitches needs a sensor check, one with a confirmed drop needs a driver call. */
 function Summary({
   anomalies,
   onSelect,
@@ -47,7 +46,6 @@ function Summary({
   anomalies: SensorAnomaly[];
   onSelect(truckId: string): void;
 }) {
-  // Map.groupBy would be shorter, but it is ES2024 and the tests still run on Node 20.
   const perTruck = new Map<string, Record<SensorAnomaly['outcome'], number>>();
   for (const { truckId, outcome } of anomalies) {
     const counts = perTruck.get(truckId) ?? { ongoing: 0, sensor_glitch: 0, confirmed: 0 };
@@ -102,7 +100,6 @@ function AnomalyRow({
         <Badge tone={OUTCOME[outcome].tone}>{OUTCOME[outcome].label}</Badge>
       </div>
       <p className="text-slate-700">
-        {/* Once confirmed, the low value is what the app shows, so "showing ... instead" is no longer true. */}
         {outcome === 'confirmed'
           ? `Fuel dropped from ${shown} to ${Math.round(raw)} ${unit}.`
           : `${sensor === 'speed' ? 'Speed' : 'Fuel'} read ${Math.round(raw)} ${unit}; showing ${shown} instead.`}

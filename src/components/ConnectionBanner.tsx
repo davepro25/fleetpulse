@@ -7,7 +7,6 @@ import { Badge, Button } from './ui';
 
 interface Props {
   dispatcherName: string;
-  /** Unmounting the dashboard closes SSE and WS, so the server announces that we left. */
   onSignOut(): void;
 }
 
@@ -61,7 +60,6 @@ export function ConnectionBanner({ dispatcherName, onSignOut }: Props) {
   );
 }
 
-/** Truck names come from REST; the live map keeps working from SSE whatever happens here. */
 function FleetStatus() {
   const fleet = useFleet();
 

@@ -8,8 +8,6 @@ import {
 import { API, HEADER } from './endpoints';
 import { api } from './http';
 
-// Mutations throw ky's HTTPError on non-2xx; the parsed error body (e.g. a 409) is in `error.data`.
-
 export async function fetchRoutes(signal?: AbortSignal): Promise<Route[]> {
   const { routes } = await api.get(API.routes, { signal }).json(RoutesResponseSchema);
   return routes;

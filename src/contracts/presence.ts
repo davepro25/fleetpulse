@@ -1,7 +1,5 @@
 import { z } from 'zod';
 
-// activeDispatchers is left out on purpose: it counts ghosts and is zeroed by reset.
-
 export const WsRegisteredSchema = z.object({
   type: z.literal('registered'),
   dispatcherId: z.string(),
@@ -21,7 +19,6 @@ export const WsDispatcherLeftSchema = z.object({
   timestamp: z.number(),
 });
 
-// dispatcherId is null when the sender never registered: such messages are rejected.
 export const WsDispatcherViewingSchema = z.object({
   type: z.literal('dispatcher_viewing'),
   dispatcherId: z.string(),

@@ -18,7 +18,6 @@ const EMPTY: RouteFormInput = { truckId: '', destination: '', priority: 'normal'
 interface Props {
   routes: Route[];
   statuses: Record<string, TruckStatus>;
-  /** The truck selected on the map or list is offered first, if it is free. */
   selectedId: string | null;
 }
 

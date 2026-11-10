@@ -10,7 +10,6 @@ const WARNING = {
   sudden_drop: 'Possible sensor glitch',
 } as const;
 
-// The raw faulty value (e.g. 999) is never shown: the dispatcher sees the last valid one.
 export function formatSensor(sensor: SensorValue, unit: string): SensorText {
   const text = sensor.value === null ? '—' : `${Math.round(sensor.value)} ${unit}`;
   if (!sensor.fault) return { text, warning: null };

@@ -37,7 +37,6 @@ const DOT: Record<Tone, string> = {
   indigo: 'bg-indigo-500',
 };
 
-/** Always text + colour, never colour alone. */
 export function Badge({
   tone = 'neutral',
   dot = false,

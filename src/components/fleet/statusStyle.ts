@@ -1,7 +1,6 @@
 import type { RouteStatus, TruckStatus } from '../../contracts';
 import type { Tone } from '../ui';
 
-/** Map marker fill (Leaflet needs a raw colour). */
 export const STATUS_COLOR: Record<TruckStatus, string> = {
   active: '#10b981',
   idle: '#0ea5e9',

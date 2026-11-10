@@ -4,7 +4,6 @@ import { Alert, Button } from './ui';
 interface Props {
   title: string;
   children: ReactNode;
-  /** Re-computed on every render from live data: the action can become invalid while open. */
   disabledReason: string | null;
   onConfirm(): void;
   onCancel(): void;
@@ -32,7 +31,6 @@ export function ConfirmDialog({ title, children, disabledReason, onConfirm, onCa
         <p className="text-sm text-slate-700">{children}</p>
         {disabledReason && <Alert tone="amber">{disabledReason}</Alert>}
         <div className="flex justify-end gap-2">
-          {/* Focus starts on Cancel: the safe choice for an action that changes a route. */}
           <Button onClick={onCancel} autoFocus>
             Cancel
           </Button>

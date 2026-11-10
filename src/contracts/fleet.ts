@@ -30,7 +30,6 @@ export const FleetSnapshotSchema = z.object({
 });
 export type FleetSnapshot = z.infer<typeof FleetSnapshotSchema>;
 
-// GET /api/fleet has no mileage: only the single-truck endpoint does.
 export const TruckDetailSchema = FleetTruckSchema.extend({
   mileage: z.number(),
   lastUpdate: z.number(),

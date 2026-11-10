@@ -25,7 +25,6 @@ export function TruckDetail({ id }: { id: string }) {
   const { data: history } = useTelemetryHistory(id);
   const viewers = useViewersOf(id);
 
-  // Fill the charts at once instead of waiting minutes for live points.
   useEffect(() => {
     if (history) useTelemetryStore.getState().seed(id, history);
   }, [id, history]);
@@ -43,7 +42,6 @@ export function TruckDetail({ id }: { id: string }) {
         </Badge>
       }
     >
-      {/* The list row only has room for a count; here every name is shown. */}
       {viewers.length > 0 && (
         <p className="mb-4 rounded-md bg-indigo-50 px-3 py-2 text-sm text-indigo-800">
           Also viewing: <span className="font-medium">{viewers.join(', ')}</span>

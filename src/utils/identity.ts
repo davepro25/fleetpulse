@@ -33,7 +33,7 @@ export function loadIdentity(): Identity | null {
   try {
     return IdentitySchema.parse(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? ''));
   } catch {
-    return null; // nothing saved yet, or edited by hand
+    return null;
   }
 }
 

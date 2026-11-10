@@ -1,8 +1,6 @@
 import type { Hooks } from 'ky';
 
-/** This many 503s in a row (counting ky's retries) means the server is overloaded, not unlucky. */
 export const TRIP_AFTER = 3;
-/** How long an open circuit refuses requests before one probe may try again. */
 export const PROBE_AFTER_MS = 15_000;
 
 export class CircuitOpenError extends Error {

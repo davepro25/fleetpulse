@@ -10,7 +10,6 @@ interface State {
   error: Error | null;
 }
 
-// One per panel: a crash in the map must not take the truck list down with it.
 export class ErrorBoundary extends Component<Props, State> {
   override state: State = { error: null };
 

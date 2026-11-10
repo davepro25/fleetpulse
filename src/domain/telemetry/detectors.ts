@@ -20,7 +20,6 @@ export function checkSpeed(
   timestamp: number,
   profile: VehicleProfile,
 ): SensorValue {
-  // A speed the vehicle can actually drive: show it.
   if (raw >= profile.minSpeedKmh && raw <= profile.maxSpeedKmh) return { value: raw, fault: null };
 
   // Impossible value (truck_7's stuck 999, a negative batch speed): keep the last good value
@@ -43,7 +42,6 @@ export function checkFuel(
     return { value: raw, fault: null };
   }
 
-  // Sudden drop that has lasted long enough to be real (a leak, an empty tank): accept it.
   const since = prev.fault?.since ?? timestamp;
   if (timestamp - since >= profile.fuelDropConfirmMs) return { value: raw, fault: null };
 

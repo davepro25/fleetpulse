@@ -1,7 +1,6 @@
 import { useViewersOf } from '../../stores/presenceStore';
 import { Badge } from '../ui';
 
-/** "Eli is viewing": warns before two dispatchers change the same truck's route. */
 export function ViewerBadge({ truckId }: { truckId: string }) {
   const viewers = useViewersOf(truckId);
   if (viewers.length === 0) return null;

@@ -1,7 +1,6 @@
 import ky from 'ky';
 
 // The only retry layer for REST: TanStack retries are off (queryClient.ts).
-// Responses are validated with `.json(schema)`: ky accepts zod schemas directly.
 export const api = ky.create({
   retry: {
     limit: 3,

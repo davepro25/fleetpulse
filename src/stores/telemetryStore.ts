@@ -16,14 +16,12 @@ import {
   type TruckLive,
 } from '../domain/telemetry/pipeline';
 
-/** Telemetry normally arrives every 2 s; five missed ticks means the data on screen is old. */
 export const STALE_AFTER_MS = 10_000;
 
 interface TelemetryState {
   fleet: FleetLive;
   /** Client clock, for staleness: the server's timestamps are not comparable to ours. */
   lastTelemetryAt: number | null;
-  /** Bonus: every sensor fault since this tab connected, newest first. */
   anomalies: SensorAnomaly[];
   ingest(message: SseTelemetry | SseGpsBatch, receivedAt: number): void;
   ingestSnapshot(snapshot: FleetSnapshot): void;
@@ -49,7 +47,6 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
   ingestSnapshot: (snapshot) => set((state) => ({ fleet: applySnapshot(state.fleet, snapshot) })),
   seed: (truckId, history) =>
     set((state) => ({ fleet: seedSamples(state.fleet, truckId, history) })),
-  // Keeps lastTelemetryAt: the stream itself did not stop.
   reset: () => set({ fleet: {}, anomalies: [] }),
 }));
 
@@ -57,7 +54,6 @@ export function isStale(lastTelemetryAt: number | null, now: number): boolean {
   return lastTelemetryAt !== null && now - lastTelemetryAt > STALE_AFTER_MS;
 }
 
-/** Sorted ids ("truck_2" before "truck_10"); only changes when a truck appears. */
 export const useTruckIds = (): string[] =>
   useTelemetryStore(
     useShallow((state) =>
@@ -65,11 +61,9 @@ export const useTruckIds = (): string[] =>
     ),
   );
 
-/** Re-renders only when this truck's object changes. */
 export const useTruck = (id: string): TruckLive | undefined =>
   useTelemetryStore((state) => state.fleet[id]);
 
-/** id → live status, for "which trucks can take a route". Stable while no status changes. */
 export const useTruckStatuses = (): Record<string, TruckStatus> =>
   useTelemetryStore(
     useShallow((state) =>
