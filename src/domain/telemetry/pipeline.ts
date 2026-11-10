@@ -1,4 +1,5 @@
 import type {
+  HistorySample,
   LatLng,
   SseGpsBatch,
   SseTelemetry,
@@ -65,6 +66,32 @@ function applyReadings(
 
   const points = readings.map(({ timestamp, location }) => ({ timestamp, ...location }));
   return { ...current, path: mergeByTimestamp(current.path, points) };
+}
+
+/**
+ * Fills the charts of a newly opened truck from GET /history. Only points older than the live
+ * samples are added: live readings are real, history is the server's reconstruction. History never
+ * touches the path (its locations are random spread, not where the truck was).
+ */
+export function seedSamples(
+  fleet: FleetLive,
+  truckId: string,
+  history: HistorySample[],
+): FleetLive {
+  const truck = fleet[truckId];
+  if (!truck) return fleet;
+  const oldestLive = truck.samples[0]?.timestamp ?? Infinity;
+  const older = history
+    .filter((point) => point.timestamp < oldestLive)
+    .map(({ timestamp, speed, fuel, engineTemp }) => ({
+      timestamp,
+      // One point has no "previous good value", so an impossible speed becomes a gap.
+      speed: checkSpeed(NO_VALUE, speed, timestamp, PROFILES.truck).value,
+      fuel,
+      engineTemp,
+    }));
+  if (older.length === 0) return fleet;
+  return { ...fleet, [truckId]: { ...truck, samples: mergeByTimestamp(older, truck.samples) } };
 }
 
 function advance(truck: TruckLive, reading: TelemetryReading): TruckLive {

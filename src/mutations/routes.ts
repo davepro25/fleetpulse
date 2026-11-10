@@ -5,7 +5,6 @@ import type { CreateRouteRequest, Route, RouteStatus } from '../contracts';
 import { useSession } from '../context/SessionContext';
 import { conflictOwner, type ConflictOwner } from '../domain/routes/conflicts';
 import { applyRouteChange, refetchRoutes } from '../queries/routes';
-import { displayName } from '../utils/identity';
 
 export class RouteConflictError extends Error {
   readonly owner: ConflictOwner;
@@ -72,21 +71,4 @@ export function useReassignRoute() {
       withConflictLookup(client, { truckId }, () => reassignRoute(identity.id, route.id, truckId)),
     onSuccess: (route) => applyRouteChange(client, route),
   });
-}
-
-/** One sentence for the dispatcher. Server error strings are shown as text, never as HTML. */
-export function mutationErrorMessage(error: unknown, selfId: string): string {
-  if (error instanceof RouteConflictError) {
-    const { route, actor } = error.owner;
-    if (!route || !actor)
-      return 'Not applied: the route changed meanwhile. The list is now up to date.';
-    const who = actor.dispatcherId === selfId ? 'you' : displayName(actor.dispatcherId);
-    const when = new Date(actor.at).toLocaleTimeString();
-    return `Not applied: ${route.id} was ${actor.action} by ${who} at ${when}. The list is now up to date.`;
-  }
-  if (error instanceof HTTPError) {
-    const body = error.data as { error?: unknown } | undefined;
-    return `Not applied: ${typeof body?.error === 'string' ? body.error : `server error ${error.response.status}`}.`;
-  }
-  return 'Not applied: no connection to the server. Try again.';
 }

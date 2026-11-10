@@ -6,12 +6,12 @@ import { FleetMap } from '../components/fleet/FleetMap';
 import { TruckCount, TruckList } from '../components/fleet/TruckList';
 import { ActivityCount, AuditLog } from '../components/routes/AuditLog';
 import { ActiveRouteCount, RoutesPanel } from '../components/routes/RoutesPanel';
+import { TruckDetail } from '../components/detail/TruckDetail';
 import { DispatcherCount, DispatcherRoster } from '../components/presence/DispatcherRoster';
 import { SidebarTabs } from '../components/SidebarTabs';
 import { Muted, Panel } from '../components/ui';
 import { SessionProvider, type Session } from '../context/SessionContext';
 import { startLive } from '../live';
-import { useTruckName } from '../queries/fleet';
 import { useAuditStore } from '../stores/auditStore';
 import type { Identity } from '../utils/identity';
 
@@ -55,7 +55,18 @@ export function Dashboard({ identity, onSignOut }: Props) {
                 <FleetMap selectedId={selectedId} onSelect={setSelectedId} />
               </ErrorBoundary>
             </div>
-            <SelectedTruck id={selectedId} />
+            <div className="lg:max-h-[50%] lg:overflow-y-auto">
+              {selectedId ? (
+                // key: a crash in one truck's panel is forgotten when another truck is opened.
+                <ErrorBoundary key={selectedId} name="Truck details">
+                  <TruckDetail id={selectedId} />
+                </ErrorBoundary>
+              ) : (
+                <Panel title="Truck details">
+                  <Muted>Select a truck on the map or in the list.</Muted>
+                </Panel>
+              )}
+            </div>
           </div>
 
           <aside className="flex min-h-0 flex-col">
@@ -107,19 +118,5 @@ export function Dashboard({ identity, onSignOut }: Props) {
         </div>
       </div>
     </SessionProvider>
-  );
-}
-
-// Placeholder until the Stage 7 detail panel.
-function SelectedTruck({ id }: { id: string | null }) {
-  const name = useTruckName(id ?? '');
-  return (
-    <Panel title="Truck details">
-      <Muted>
-        {id
-          ? `${name} selected. Charts, mileage and alerts arrive in Stage 7.`
-          : 'Select a truck on the map or in the list.'}
-      </Muted>
-    </Panel>
   );
 }

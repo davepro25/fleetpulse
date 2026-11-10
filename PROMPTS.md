@@ -295,3 +295,21 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 - Dana signed out: Eli removed her within 7 ms (normal leave, outside the grace window).
 - `POST /api/reset`: both tabs showed 0 routes and 0 activity, and each roster had the other dispatcher back within 2.5 s.
 - Not reproduced live: the ghost leave itself (20% random). It is covered by the test that replays the captured sequence.
+
+- **Follow-up: `utils/json.ts` removed.** `parseJson` only turned a `JSON.parse` throw into `undefined`, so `safeParse` could reject it. Its three callers (SSE, WS, saved identity) now call `Schema.parse(JSON.parse(text))` inside a plain `try/catch`: bad JSON and a wrong shape are one case anyway. In SSE and WS the handler call stays outside the `try`, so a bug in a store is not logged as "invalid frame".
+
+- **Follow-up: ghost leave reproduced live.** Observer tab plus a tab reloaded 5 times, 12 s apart. 3 of the 5 leaves arrived about 9.7 s after the new join; the observer kept the dispatcher listed every time. A real close later removed it.
+
+## Stage 7: Vehicle detail panel
+
+**Prompt (summary):** Clicking a truck shows speed, fuel, engine temp, mileage, live charts seeded from history, its assigned route and an alert form.
+
+**Output:** `seedSamples` in the pipeline and `telemetryStore.seed`, `domain/alerts.ts` (`validateAlert`), `stores/alertStore.ts`, `api/fleet.ts` (`fetchTruckDetail`, `fetchHistory`, `sendAlert`), `useTruckDetail` / `useTelemetryHistory`, `mutations/alerts.ts`, `components/detail/{TruckDetail,TelemetryCharts,AlertForm}`, `truck_alert` in `live.ts`. 5 new tests plus the reset test now covers alerts (43 total), written first and seen failing.
+
+**Changed from the plan:**
+
+- History is added only where it is **older than the oldest live sample**. The plan said "merge by timestamp", but history runs up to 2 s before the request, so it overlaps live data; merged, its ±10 km/h jitter would zig-zag between real readings.
+- The alert list takes the POST response too, not only the WS echo. The dedupe by alert id is one line in the store, and the sender then sees the alert even if the socket is down.
+- `mutationErrorMessage` moved to `mutations/errorMessage.ts`: the alert form is its second user, so it no longer belongs to the routes file.
+
+**Verified in the browser:** charts full on open (5 minutes of history), then moving every 2 s; empty message → "Message is required"; my alert shown once; Eli's alert (second tab) appeared in my list, and the header showed "Eli" viewing the truck; a live fuel glitch on Alpha showed "Glitch?" and a gap in the fuel chart.

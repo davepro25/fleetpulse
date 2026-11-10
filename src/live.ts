@@ -4,6 +4,7 @@ import { openDispatcherSocket, type DispatcherSocket } from './api/ws';
 import type { SseMessage, WsInbound } from './contracts';
 import { QUERY_KEYS } from './queries/keys';
 import { applyRouteChange } from './queries/routes';
+import { useAlertStore } from './stores/alertStore';
 import { useAuditStore } from './stores/auditStore';
 import { useConnectionStore } from './stores/connectionStore';
 import { usePresenceStore } from './stores/presenceStore';
@@ -77,10 +78,13 @@ function handleDispatch(
       usePresenceStore.getState().apply(message, Date.now(), selfId);
       break;
 
+    case 'truck_alert':
+      useAlertStore.getState().add(message.alert);
+      break;
+
     case 'fleet_reset':
       handleFleetReset(queryClient, socket);
       break;
-    // Stage 7: truck_alert.
   }
 }
 
@@ -94,6 +98,7 @@ export function handleFleetReset(
 ) {
   queryClient.setQueryData(QUERY_KEYS.routes, []);
   useAuditStore.getState().clear();
+  useAlertStore.getState().clear();
   usePresenceStore.getState().clear();
   useTelemetryStore.getState().reset();
   void queryClient.invalidateQueries();

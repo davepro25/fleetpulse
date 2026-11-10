@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import type { SseGpsBatch, SseTelemetry, TruckStatus } from '../contracts';
-import { applyTelemetry, type FleetLive, type TruckLive } from '../domain/telemetry/pipeline';
+import type { HistorySample, SseGpsBatch, SseTelemetry, TruckStatus } from '../contracts';
+import {
+  applyTelemetry,
+  seedSamples,
+  type FleetLive,
+  type TruckLive,
+} from '../domain/telemetry/pipeline';
 
 /** Telemetry normally arrives every 2 s; five missed ticks means the data on screen is old. */
 export const STALE_AFTER_MS = 10_000;
@@ -11,6 +16,7 @@ interface TelemetryState {
   /** Client clock, for staleness: the server's timestamps are not comparable to ours. */
   lastTelemetryAt: number | null;
   ingest(message: SseTelemetry | SseGpsBatch, receivedAt: number): void;
+  seed(truckId: string, history: HistorySample[]): void;
   reset(): void;
 }
 
@@ -24,6 +30,8 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
       fleet: applyTelemetry(state.fleet, message),
       lastTelemetryAt: message.type === 'telemetry' ? receivedAt : state.lastTelemetryAt,
     })),
+  seed: (truckId, history) =>
+    set((state) => ({ fleet: seedSamples(state.fleet, truckId, history) })),
   // Keeps lastTelemetryAt: the stream itself did not stop.
   reset: () => set({ fleet: {} }),
 }));

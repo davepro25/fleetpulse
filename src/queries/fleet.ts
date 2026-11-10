@@ -1,5 +1,5 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
-import { fetchFleet } from '../api/fleet';
+import { fetchFleet, fetchHistory, fetchTruckDetail } from '../api/fleet';
 import { QUERY_KEYS } from './keys';
 
 // Not polled: SSE carries live state. Refetched on load, after reconnects and after fleet_reset.
@@ -19,4 +19,19 @@ export function useTruckName(id: string): string {
     select: (snapshot) => snapshot.fleet.find((truck) => truck.id === id)?.name,
   });
   return data ?? id;
+}
+
+// Fetched when a truck is opened. Mileage does not change in the simulation, so no polling.
+export function useTruckDetail(truckId: string) {
+  return useQuery({
+    queryKey: QUERY_KEYS.truck(truckId),
+    queryFn: ({ signal }) => fetchTruckDetail(truckId, signal),
+  });
+}
+
+export function useTelemetryHistory(truckId: string) {
+  return useQuery({
+    queryKey: QUERY_KEYS.history(truckId),
+    queryFn: ({ signal }) => fetchHistory(truckId, signal),
+  });
 }

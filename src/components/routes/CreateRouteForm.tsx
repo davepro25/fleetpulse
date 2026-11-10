@@ -8,7 +8,8 @@ import {
   type RouteFormErrors,
   type RouteFormInput,
 } from '../../domain/routes/validation';
-import { mutationErrorMessage, useCreateRoute } from '../../mutations/routes';
+import { mutationErrorMessage } from '../../mutations/errorMessage';
+import { useCreateRoute } from '../../mutations/routes';
 import { Alert, Button, Field, inputClass } from '../ui';
 import { TruckOption } from './TruckOption';
 

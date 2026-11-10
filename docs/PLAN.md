@@ -198,7 +198,7 @@ src/
   hooks/        generic hooks (useNow)
   pages/        Dashboard (layout + startLive effect)
   components/   IdentityGate; fleet/, routes/, presence/, detail/, ui/
-  utils/        json, identity
+  utils/        identity, format
   live.ts       composition root: api -> domain/stores/queries
   App.tsx, main.tsx, queryClient.ts
 tests/          all tests, flat (*.test.ts); fixtures/ = captured server payloads
@@ -300,7 +300,7 @@ type WsOutbound = { type: 'register_dispatcher'; dispatcherId: string; name: str
 - `src/api/http.ts`: one ky instance (retry: limit 3, GET only, 502/503/504, waits `Retry-After` on 503); `getJson(path, schema, signal)`, `sendJson(method, path, {dispatcherId, body?, ifMatch?}, schema)`. Errors are ky `HTTPError` with the parsed body in `error.data`.
 - `src/api/sse.ts`: `openTelemetryStream({onMessage, onStatus, onReconnected}, url?): () => void`.
 - `src/api/ws.ts`: `openDispatcherSocket(identity, {onMessage, onStatus, onRtt, onReconnected}, url?)` returning `{ sendViewing(truckId | null), reregister(), close() }`.
-- `src/api/backoff.ts` (SSE/WS reconnect delay), `src/utils/json.ts` (`parseJson` that never throws), `src/utils/identity.ts` (`createIdentity`, `loadIdentity` via a zod schema, `validateName`; sessionStorage).
+- `src/api/backoff.ts` (SSE/WS reconnect delay), `src/utils/identity.ts` (`createIdentity`, `loadIdentity` via a zod schema, `validateName`; sessionStorage).
 - `src/stores/connectionStore.ts`: Zustand `{ sse, ws, wsRttMs }`.
 - `src/context/SessionContext.tsx`: `{ identity, socket }` + `useSession()`.
 - `src/components/IdentityGate.tsx`: name form, shown until an identity exists.
@@ -687,3 +687,4 @@ Circuit breaker and every bonus feature · form library · router · CSS framewo
 - Components never call `useQuery` / `useMutation` directly: queries are hooks in `queries/*` (options stay private), mutations are hooks in `mutations/*`.
 
 - **Stage 6 as built:** the reducer is `domain/presence.ts` (`applyPresence`, roster as a plain object), the store is `stores/presenceStore.ts`, one `ViewerBadge` component; the socket gained `announceViewing()` so a reply-to-join also reports "no truck".
+- **Stage 7 as built:** history seeds only points older than the live samples (it overlaps them); alerts go to the list from the POST response and the WS echo, deduped by id; `mutationErrorMessage` moved to `mutations/errorMessage.ts` (two users now). Components live in `components/detail/`.

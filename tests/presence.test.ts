@@ -4,6 +4,7 @@ import type { Route, WsInbound } from '../src/contracts';
 import { applyPresence, GHOST_GRACE_MS, type Roster } from '../src/domain/presence';
 import { handleFleetReset } from '../src/live';
 import { QUERY_KEYS } from '../src/queries/keys';
+import { useAlertStore } from '../src/stores/alertStore';
 import { useAuditStore } from '../src/stores/auditStore';
 import { usePresenceStore } from '../src/stores/presenceStore';
 import { useTelemetryStore } from '../src/stores/telemetryStore';
@@ -56,7 +57,7 @@ describe('presence', () => {
 });
 
 describe('fleet_reset', () => {
-  it('clears routes, audit, roster and telemetry, refetches, and registers again', () => {
+  it('clears routes, audit, alerts, roster and telemetry, refetches, and registers again', () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(QUERY_KEYS.routes, [rest.createRoute201.body as Route]);
     useAuditStore.getState().record({
@@ -68,6 +69,7 @@ describe('fleet_reset', () => {
       truckId: 'truck_1',
       status: 'assigned',
     });
+    useAlertStore.getState().add(ws.truck_alert.alert);
     usePresenceStore.getState().apply(joined, 0, SELF);
     useTelemetryStore.getState().ingest(sse.telemetry as never, 0);
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
@@ -78,6 +80,7 @@ describe('fleet_reset', () => {
     // Route ids restart at route_1 with version 1: old entries would hide the new routes.
     expect(queryClient.getQueryData(QUERY_KEYS.routes)).toEqual([]);
     expect(useAuditStore.getState().entries).toEqual([]);
+    expect(useAlertStore.getState().alerts).toEqual([]);
     expect(usePresenceStore.getState().roster).toEqual({});
     expect(useTelemetryStore.getState().fleet).toEqual({});
     expect(invalidate).toHaveBeenCalled();
