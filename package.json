@@ -9,7 +9,6 @@
   "scripts": {
     "start": "concurrently -k -n server,web -c blue,green \"node server.js\" \"vite\"",
     "test": "tsc --noEmit && vitest run --passWithNoTests",
-    "capture-fixtures": "node scripts/capture-fixtures.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
