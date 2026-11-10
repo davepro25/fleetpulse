@@ -1,12 +1,18 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { CircuitOpenError, PROBE_AFTER_MS } from '../api/circuit';
 import { fetchFleet, fetchHistory, fetchTruckDetail } from '../api/fleet';
+import { useTelemetryStore } from '../stores/telemetryStore';
 import { QUERY_KEYS } from './keys';
 
 // Not polled: SSE carries live state. Refetched on load, after reconnects and after fleet_reset.
 const fleetQuery = queryOptions({
   queryKey: QUERY_KEYS.fleet,
-  queryFn: ({ signal }) => fetchFleet(signal),
+  queryFn: async ({ signal }) => {
+    const snapshot = await fetchFleet(signal);
+    // The sensor checks' baseline for trucks with no live reading yet (see applySnapshot).
+    useTelemetryStore.getState().ingestSnapshot(snapshot);
+    return snapshot;
+  },
 });
 
 /** The banner's subscription. It alone probes an open circuit, so other readers don't multiply probes. */

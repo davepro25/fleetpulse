@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { SseMessageSchema, type SseGpsBatch, type SseTelemetry } from '../src/contracts';
+import {
+  FleetSnapshotSchema,
+  SseMessageSchema,
+  type SseGpsBatch,
+  type SseTelemetry,
+} from '../src/contracts';
 import { checkSpeed, isLowFuel } from '../src/domain/telemetry/detectors';
-import { applyTelemetry, BUFFER_CAP, type FleetLive } from '../src/domain/telemetry/pipeline';
+import {
+  applySnapshot,
+  applyTelemetry,
+  BUFFER_CAP,
+  type FleetLive,
+} from '../src/domain/telemetry/pipeline';
 import { PROFILES, type VehicleProfile } from '../src/domain/telemetry/profiles';
+import rest from './fixtures/rest.json';
 import sse from './fixtures/sse.json';
 
 type Message = SseTelemetry | SseGpsBatch;
@@ -57,6 +68,21 @@ describe('fuel sensor', () => {
     const fleet = run([frame({ fuel: 5, timestamp: 0 }), frame({ fuel: 0, timestamp: 2000 })]);
 
     expect(fleet.truck_1!.fuel).toMatchObject({ value: 5, fault: { kind: 'sudden_drop' } });
+  });
+
+  it('checks the first live reading against the fleet snapshot, so a 0 % glitch on page load never alerts', () => {
+    const snapshot = FleetSnapshotSchema.parse(rest.fleet200.body);
+    const truck = snapshot.fleet[0]!; // truck_1, 55 % fuel
+    const loaded = applySnapshot({}, snapshot);
+    const fleet = applyTelemetry(loaded, frame({ fuel: 0, timestamp: snapshot.timestamp + 2000 }));
+
+    expect(fleet.truck_1!.fuel).toMatchObject({
+      value: truck.fuel,
+      fault: { kind: 'sudden_drop' },
+    });
+    expect(isLowFuel(fleet.truck_1!.fuel, PROFILES.truck)).toBe(false);
+    // A refetched snapshot never overwrites a truck that already has live readings.
+    expect(applySnapshot(fleet, snapshot)).toBe(fleet);
   });
 
   it('alerts on a gradual decline as soon as it crosses the threshold, with no fault', () => {

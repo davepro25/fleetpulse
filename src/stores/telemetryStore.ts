@@ -1,8 +1,15 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import type { HistorySample, SseGpsBatch, SseTelemetry, TruckStatus } from '../contracts';
+import type {
+  FleetSnapshot,
+  HistorySample,
+  SseGpsBatch,
+  SseTelemetry,
+  TruckStatus,
+} from '../contracts';
 import { trackAnomalies, type SensorAnomaly } from '../domain/telemetry/anomalies';
 import {
+  applySnapshot,
   applyTelemetry,
   seedSamples,
   type FleetLive,
@@ -19,6 +26,7 @@ interface TelemetryState {
   /** Bonus: every sensor fault since this tab connected, newest first. */
   anomalies: SensorAnomaly[];
   ingest(message: SseTelemetry | SseGpsBatch, receivedAt: number): void;
+  ingestSnapshot(snapshot: FleetSnapshot): void;
   seed(truckId: string, history: HistorySample[]): void;
   reset(): void;
 }
@@ -38,6 +46,7 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
         lastTelemetryAt: message.type === 'telemetry' ? receivedAt : state.lastTelemetryAt,
       };
     }),
+  ingestSnapshot: (snapshot) => set((state) => ({ fleet: applySnapshot(state.fleet, snapshot) })),
   seed: (truckId, history) =>
     set((state) => ({ fleet: seedSamples(state.fleet, truckId, history) })),
   // Keeps lastTelemetryAt: the stream itself did not stop.

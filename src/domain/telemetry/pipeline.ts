@@ -1,4 +1,5 @@
 import type {
+  FleetSnapshot,
   HistorySample,
   LatLng,
   SseGpsBatch,
@@ -66,6 +67,23 @@ function applyReadings(
 
   const points = readings.map(({ timestamp, location }) => ({ timestamp, ...location }));
   return { ...current, path: mergeByTimestamp(current.path, points) };
+}
+
+/**
+ * Gives trucks a baseline from GET /api/fleet before their first SSE reading. Without one, the
+ * fuel check has nothing to compare against, so a 0 % glitch as the very first reading would be
+ * accepted (and raise low fuel). Trucks that already have live readings are left alone.
+ */
+export function applySnapshot(fleet: FleetLive, snapshot: FleetSnapshot): FleetLive {
+  const missing = snapshot.fleet.filter((truck) => !fleet[truck.id]);
+  if (missing.length === 0) return fleet;
+  const next: Record<string, TruckLive> = { ...fleet };
+  for (const truck of missing) {
+    // The snapshot is a reading too: same fields, taken at the snapshot's time.
+    const reading = { ...truck, truckId: truck.id, timestamp: snapshot.timestamp };
+    next[truck.id] = advance(newTruck(reading), reading);
+  }
+  return next;
 }
 
 /**
