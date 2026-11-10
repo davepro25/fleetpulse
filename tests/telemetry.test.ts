@@ -53,6 +53,12 @@ describe('fuel sensor', () => {
     expect(isLowFuel(fleet.truck_1!.fuel, PROFILES.truck)).toBe(true);
   });
 
+  it('suspects the 0 % glitch on a tank at the server floor of 5 % (a drop of exactly 5)', () => {
+    const fleet = run([frame({ fuel: 5, timestamp: 0 }), frame({ fuel: 0, timestamp: 2000 })]);
+
+    expect(fleet.truck_1!.fuel).toMatchObject({ value: 5, fault: { kind: 'sudden_drop' } });
+  });
+
   it('alerts on a gradual decline as soon as it crosses the threshold, with no fault', () => {
     const levels = [15.1, 15.05, 14.95];
     const fleet = run(levels.map((fuel, i) => frame({ fuel, timestamp: i * 2000 })));

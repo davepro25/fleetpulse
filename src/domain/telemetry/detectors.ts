@@ -38,7 +38,8 @@ export function checkFuel(
   const trusted = prev.value;
 
   // First reading, normal consumption, a refuel, or a glitch that recovered: accept it.
-  if (trusted === null || raw >= trusted - profile.fuelDropSuspectPct) {
+  // Strictly greater: the server floors fuel at 5 %, so its 0 % glitch is a drop of exactly 5.
+  if (trusted === null || raw > trusted - profile.fuelDropSuspectPct) {
     return { value: raw, fault: null };
   }
 
