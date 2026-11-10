@@ -1,7 +1,9 @@
 import 'leaflet/dist/leaflet.css';
 import { useEffect } from 'react';
 import { MapContainer, Polyline, TileLayer, useMap } from 'react-leaflet';
-import { useTelemetryStore, useTruck, useTruckIds } from '../../stores/telemetryStore';
+import type { FleetFilter } from '../../domain/fleetFilter';
+import { useTelemetryStore, useTruck } from '../../stores/telemetryStore';
+import { useFilteredTruckIds } from './FleetFilters';
 import { MARKER_RING, STATUS_COLOR } from './statusStyle';
 import { TruckMarker } from './TruckMarker';
 
@@ -9,12 +11,13 @@ const TEL_AVIV: [number, number] = [32.0853, 34.7818];
 
 interface Props {
   selectedId: string | null;
+  filter: FleetFilter;
   onSelect(id: string): void;
 }
 
-// Re-renders only when a truck appears; each marker subscribes to its own truck.
-export function FleetMap({ selectedId, onSelect }: Props) {
-  const ids = useTruckIds();
+// Re-renders only when the set of shown trucks changes; each marker subscribes to its own truck.
+export function FleetMap({ selectedId, filter, onSelect }: Props) {
+  const ids = useFilteredTruckIds(filter);
 
   return (
     <>

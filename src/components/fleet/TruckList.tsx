@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { isFiltering, SHOW_ALL, type FleetFilter } from '../../domain/fleetFilter';
 import type { SensorFault } from '../../domain/telemetry/detectors';
 import { isLowFuel } from '../../domain/telemetry/detectors';
 import { PROFILES } from '../../domain/telemetry/profiles';
@@ -6,22 +7,39 @@ import { useTruckName } from '../../queries/fleet';
 import { useTruck, useTruckIds } from '../../stores/telemetryStore';
 import { formatSensor } from '../../utils/format';
 import { ViewerBadge } from '../presence/ViewerBadge';
-import { Badge, Muted } from '../ui';
+import { Badge, Button, Muted } from '../ui';
 import { TabCount } from '../SidebarTabs';
+import { FleetFilters, useFilteredTruckIds } from './FleetFilters';
 import { TRUCK_STATUS_TONE } from './statusStyle';
 
 interface Props {
   selectedId: string | null;
+  filter: FleetFilter;
+  onFilterChange(filter: FleetFilter): void;
   onSelect(id: string): void;
 }
 
-export function TruckList({ selectedId, onSelect }: Props) {
-  const ids = useTruckIds();
+export function TruckList({ selectedId, filter, onFilterChange, onSelect }: Props) {
+  const total = useTruckIds().length;
+  const ids = useFilteredTruckIds(filter);
+
+  if (total === 0) return <Muted>Waiting for telemetry…</Muted>;
 
   return (
     <>
+      <FleetFilters filter={filter} onChange={onFilterChange} />
+
+      {isFiltering(filter) && (
+        <div className="mb-2 flex items-center justify-between text-sm text-slate-600">
+          <span>
+            Showing {ids.length} of {total} trucks
+          </span>
+          <Button onClick={() => onFilterChange(SHOW_ALL)}>Clear filters</Button>
+        </div>
+      )}
+
       {ids.length === 0 ? (
-        <Muted>Waiting for telemetry…</Muted>
+        <Muted>No trucks match these filters.</Muted>
       ) : (
         <table className="w-full text-sm">
           <thead>

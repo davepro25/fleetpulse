@@ -12,6 +12,7 @@ import { DispatcherCount, DispatcherRoster } from '../components/presence/Dispat
 import { SidebarTabs } from '../components/SidebarTabs';
 import { Muted, Panel } from '../components/ui';
 import { SessionProvider, type Session } from '../context/SessionContext';
+import { SHOW_ALL, type FleetFilter } from '../domain/fleetFilter';
 import { startLive } from '../live';
 import { useAlertStore } from '../stores/alertStore';
 import { useAuditStore } from '../stores/auditStore';
@@ -26,6 +27,7 @@ export function Dashboard({ identity, onSignOut }: Props) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FleetFilter>(SHOW_ALL);
 
   useEffect(() => {
     const live = startLive(queryClient, identity);
@@ -55,7 +57,7 @@ export function Dashboard({ identity, onSignOut }: Props) {
           <div className="flex min-h-0 flex-col gap-3">
             <div className="relative h-[55vh] overflow-hidden rounded-lg ring-1 ring-slate-200 lg:h-auto lg:flex-1">
               <ErrorBoundary name="Map">
-                <FleetMap selectedId={selectedId} onSelect={setSelectedId} />
+                <FleetMap selectedId={selectedId} filter={filter} onSelect={setSelectedId} />
               </ErrorBoundary>
             </div>
             <div className="lg:max-h-[50%] lg:overflow-y-auto">
@@ -80,7 +82,12 @@ export function Dashboard({ identity, onSignOut }: Props) {
                   count: <TruckCount />,
                   content: (
                     <ErrorBoundary name="Trucks">
-                      <TruckList selectedId={selectedId} onSelect={setSelectedId} />
+                      <TruckList
+                        selectedId={selectedId}
+                        filter={filter}
+                        onFilterChange={setFilter}
+                        onSelect={setSelectedId}
+                      />
                     </ErrorBoundary>
                   ),
                 },

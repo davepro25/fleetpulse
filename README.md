@@ -117,7 +117,7 @@ The audit log covers only changes seen since the tab opened: the server has no r
 
 ## Bonus features
 
-Two of the seven, chosen because they extend the two quirks the assignment is built around.
+Three of the seven. The first two extend the quirks the assignment is built around; the third is the cheapest that helps a dispatcher every day.
 
 **Circuit breaker for `GET /api/fleet` (quirk 7).** ky retries a 503 after `Retry-After`. The breaker (`api/circuit.ts`, ky hooks on this one request) counts 503s per attempt, retries included: after three in a row it ends the request at once and refuses new ones for 15 s. The query keeps the last snapshot, and the banner says "Server overloaded: truck names from 12:03:04, retrying every 15s". The banner's query probes every 15 s while the circuit is open: a 200 closes it, a 503 opens it for another 15 s. A probe is one request, not four. Only 503 counts: a 502 means `server.js` is down, which the SSE and WS reconnects already cover. The map does not depend on this request, since positions come from SSE.
 
@@ -127,6 +127,13 @@ Two of the seven, chosen because they extend the two quirks the assignment is bu
 - **Real fuel drop:** the low reading held past the 10 s confirm window. Call the driver.
 
 `domain/telemetry/anomalies.ts` builds the log by comparing each truck before and after a telemetry message. The detectors from Stage 3 are unchanged and know nothing about the log.
+
+**Filterable fleet view.** Above the truck list, three filters narrow both the list and the map: status (active, idle, maintenance), fuel (below 50 %, 25 % or 15 %) and route (with or without an active route). They combine, "Showing 4 of 12 trucks" says what is hidden, and "Clear filters" resets them. Two choices worth knowing:
+
+- Fuel compares the trusted value, so a truck in the middle of a 0 % glitch does not appear under "below 15 %".
+- "With a route" comes from the routes list, like route assignment everywhere else, not from the snapshot's `currentRouteId`, which goes stale after the first mutation.
+
+`domain/fleetFilter.ts` (`matchesFilter`) is pure and tested; the filter state lives in `Dashboard`, next to the selected truck.
 
 ## Error handling
 
@@ -153,7 +160,7 @@ Each failure is handled in the layer that can do something about it; nothing rea
 
 ## Tests
 
-`npm test` runs `tsc --noEmit` and 49 Vitest tests (`tests/`). Wherever a quirk is involved, the inputs are payloads captured from the real server (`tests/fixtures/`).
+`npm test` runs `tsc --noEmit` and 53 Vitest tests (`tests/`). Wherever a quirk is involved, the inputs are payloads captured from the real server (`tests/fixtures/`).
 
 | File                                  | Edge cases it proves                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -164,6 +171,7 @@ Each failure is handled in the layer that can do something about it; nothing rea
 | `presence.test.ts`                    | The captured ghost leave is ignored; a leave after the grace window removes; unknown and repeated leaves change nothing; a viewer never seen joining; our own messages ignored; `fleet_reset` clears everything and re-registers                                                                                                                                                                                 |
 | `sse.test.ts`, `ws.test.ts`           | Own reconnect only when the browser gives up; refetch after a failure, not on a clean start; re-register and re-announce after a drop; a missing pong reconnects; `close()` leaves no timer                                                                                                                                                                                                                      |
 | `contracts.test.ts`                   | Every captured message passes; one malformed reading keeps its siblings; `dispatcher_viewing` from an unregistered sender is rejected                                                                                                                                                                                                                                                                            |
+| `filter.test.ts`                      | Status, fuel and route filters, alone and combined; a truck in a 0 % glitch is not "low"                                                                                                                                                                                                                                                                                                                         |
 | `detail.test.ts`                      | History seeds only before live data, never the path, and keeps the cap; alert validation                                                                                                                                                                                                                                                                                                                         |
 | `display.test.ts`, `identity.test.ts` | A faulted sensor never shows its raw value; stale after 10 s; identity survives a reload and ignores corrupted storage; names reject markup and the separator                                                                                                                                                                                                                                                    |
 
@@ -171,14 +179,14 @@ Each failure is handled in the layer that can do something about it; nothing rea
 
 Two dispatcher tabs (SoakA viewing Truck Golf, SoakB viewing Truck Alpha) ran for 2 hours (16:58 to 18:58) against `npm start`, in the dev build. Both tabs wrapped the `EventSource` and `WebSocket` constructors to count every new connection.
 
-| Measure (SoakA) | Start | After 2 h |
-| --- | --- | --- |
-| JS heap | 48.0 MB | 51.6 to 58.3 MB (sawtooth between garbage collections) |
-| Samples per truck (max) | 150 | 150 |
-| Path points per truck (max) | 6 | 150 (cap) |
-| Sensor log entries | 4 | 200 (cap) |
-| DOM nodes | 645 | 1,859 (the 200-row sensor log and full charts; flat once the caps are reached) |
-| New `EventSource` / `WebSocket` after start | 0 / 0 | 0 / 0 |
+| Measure (SoakA)                             | Start   | After 2 h                                                                      |
+| ------------------------------------------- | ------- | ------------------------------------------------------------------------------ |
+| JS heap                                     | 48.0 MB | 51.6 to 58.3 MB (sawtooth between garbage collections)                         |
+| Samples per truck (max)                     | 150     | 150                                                                            |
+| Path points per truck (max)                 | 6       | 150 (cap)                                                                      |
+| Sensor log entries                          | 4       | 200 (cap)                                                                      |
+| DOM nodes                                   | 645     | 1,859 (the 200-row sensor log and full charts; flat once the caps are reached) |
+| New `EventSource` / `WebSocket` after start | 0 / 0   | 0 / 0                                                                          |
 
 SoakB's heap went from 78.8 MB to 53.7 MB. Every buffer stops at its cap, the heap does not climb, and no tab opened a second connection. The dev build adds React DevTools and HMR overhead, so the absolute numbers are higher than in a production build.
 
@@ -221,4 +229,4 @@ SoakB's heap went from 78.8 MB to 53.7 MB. Every buffer stops at its cap, the he
 - **Tests:** a Playwright run of the two-tab conflict scenarios against the real server; today they are verified by hand.
 - **Multi-tab:** share the circuit breaker and the logs between tabs (`BroadcastChannel`).
 - **Scale:** virtualize the truck list, and batch store updates per animation frame if the fleet or the event rate grows (see the `shortcut:` note in `telemetryStore.ts`).
-- **Bonuses:** filters (status, fuel, route) and keyboard shortcuts are the next cheapest.
+- **Bonuses:** keyboard shortcuts are the next cheapest; the filters could be kept in the URL so a reload keeps them.

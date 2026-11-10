@@ -54,10 +54,15 @@ export function isStale(lastTelemetryAt: number | null, now: number): boolean {
   return lastTelemetryAt !== null && now - lastTelemetryAt > STALE_AFTER_MS;
 }
 
-export const useTruckIds = (): string[] =>
+const byTruckNumber = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true });
+
+export const useTruckIds = (keep: (truck: TruckLive) => boolean = () => true): string[] =>
   useTelemetryStore(
     useShallow((state) =>
-      Object.keys(state.fleet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+      Object.values(state.fleet)
+        .filter(keep)
+        .map((truck) => truck.id)
+        .sort(byTruckNumber),
     ),
   );
 

@@ -346,6 +346,21 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 
 - **Follow-up: a 0 % glitch as the very first reading.** Found in review: with no trusted value yet, `checkFuel` accepted a first reading of 0, so low fuel showed until the next reading, and the next reading (back to 42) passed as a refuel, so the Sensors log missed it too. Fix: `applySnapshot` gives trucks a baseline from `GET /api/fleet` (taken from the tank state, never glitched) before their first SSE reading. Rejected: special-casing 0 (detect, don't special-case), or hiding every first reading until a second one agrees ("—" on all trucks for 2 s). Remaining gap: if SSE beats the snapshot (for example while `/api/fleet` is retrying a 503), that truck has no baseline; it goes into Known issues.
 
+## Bonus: filterable fleet view
+
+**Prompt (summary):** Filter trucks by status, fuel level or route assignment.
+
+**Output:** `domain/fleetFilter.ts` (`FleetFilter`, `matchesFilter`), `components/fleet/FleetFilters.tsx` (three selects and `useFilteredTruckIds`), `useTruckIds` now takes an optional predicate, and the filter state in `Dashboard` feeds both the list and the map. 4 tests in `tests/filter.test.ts` (53 total), written first and seen failing.
+
+**Decisions:**
+
+- The map filters too. A list that says "2 trucks" next to a map with 12 markers would contradict itself.
+- Fuel uses the trusted value (`truck.fuel.value`), not the raw reading, so the 0 % glitch can't put a truck under "below 15 %".
+- Route assignment comes from the routes list (`isActive`), as everywhere else; the snapshot's `currentRouteId` goes stale.
+- The filter lives in `Dashboard` state, not in a store: one owner, two readers. Rejected: putting it in the URL (nice for reloads, but a router for one feature).
+
+**Verified in the browser:** "active" left 9 of 12 rows and 9 markers; adding "With a route" left 2; "below 15 %" showed every drained truck, including one marked "Glitch?" whose trusted value was 5 %; "Clear filters" brought back all 12 markers and the three selects.
+
 ## Stage 8: Hardening and docs
 
 **Prompt (summary):** Prove the app holds up over hours, audit cleanup and safety, check a fresh clone, and finish the README and this journal.
