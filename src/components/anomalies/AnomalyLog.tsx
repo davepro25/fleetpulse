@@ -102,8 +102,10 @@ function AnomalyRow({
         <Badge tone={OUTCOME[outcome].tone}>{OUTCOME[outcome].label}</Badge>
       </div>
       <p className="text-slate-700">
-        {sensor === 'speed' ? 'Speed' : 'Fuel'} read {Math.round(raw)} {unit}; showing {shown}{' '}
-        instead.
+        {/* Once confirmed, the low value is what the app shows, so "showing ... instead" is no longer true. */}
+        {outcome === 'confirmed'
+          ? `Fuel dropped from ${shown} to ${Math.round(raw)} ${unit}.`
+          : `${sensor === 'speed' ? 'Speed' : 'Fuel'} read ${Math.round(raw)} ${unit}; showing ${shown} instead.`}
       </p>
     </li>
   );
