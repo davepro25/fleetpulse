@@ -20,7 +20,9 @@ const CLOSED: CircuitState = { failures: 0, openedAt: null };
 // Only a 503 counts: a 502 from the proxy means server.js is down, which SSE reconnects handle.
 // Every 503 from TRIP_AFTER on (re)opens the circuit, so a failed probe waits another window.
 function record(state: CircuitState, status: number, now: number): CircuitState {
-  if (status !== 503) return status < 300 ? CLOSED : state;
+  if (status < 300) return CLOSED;
+  if (status !== 503) return state;
+
   const failures = state.failures + 1;
   return { failures, openedAt: failures >= TRIP_AFTER ? now : null };
 }

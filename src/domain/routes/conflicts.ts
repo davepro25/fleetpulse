@@ -8,18 +8,23 @@ export interface Actor {
 }
 
 export function lastActor(route: Route): Actor {
-  const candidates: (Actor | null)[] = [
+  const actors: Actor[] = [
     { dispatcherId: route.assignedBy, action: 'assigned', at: route.assignedAt },
-    route.lastModifiedBy && route.lastModifiedAt
-      ? { dispatcherId: route.lastModifiedBy, action: 'updated', at: route.lastModifiedAt }
-      : null,
-    route.reassignedBy && route.reassignedAt
-      ? { dispatcherId: route.reassignedBy, action: 'reassigned', at: route.reassignedAt }
-      : null,
   ];
-  return candidates
-    .filter((actor): actor is Actor => actor !== null)
-    .reduce((latest, actor) => (actor.at > latest.at ? actor : latest));
+
+  if (route.lastModifiedBy && route.lastModifiedAt) {
+    actors.push({
+      dispatcherId: route.lastModifiedBy,
+      action: 'updated',
+      at: route.lastModifiedAt,
+    });
+  }
+
+  if (route.reassignedBy && route.reassignedAt) {
+    actors.push({ dispatcherId: route.reassignedBy, action: 'reassigned', at: route.reassignedAt });
+  }
+
+  return actors.reduce((latest, actor) => (actor.at > latest.at ? actor : latest));
 }
 
 export interface ConflictOwner {

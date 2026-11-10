@@ -27,6 +27,7 @@ async function withConflictLookup<T>(
     return await call();
   } catch (error) {
     if (!(error instanceof HTTPError) || error.response.status !== 409) throw error;
+
     const fresh = await refetchRoutes(client);
     throw new RouteConflictError(conflictOwner(fresh, subject));
   }
@@ -42,19 +43,17 @@ export function useCreateRoute() {
   });
 }
 
+interface StatusChange {
+  routeId: string;
+  version: number;
+  status: RouteStatus;
+}
+
 export function useUpdateRouteStatus() {
   const client = useQueryClient();
   const { identity } = useSession();
   return useMutation({
-    mutationFn: ({
-      routeId,
-      version,
-      status,
-    }: {
-      routeId: string;
-      version: number;
-      status: RouteStatus;
-    }) =>
+    mutationFn: ({ routeId, version, status }: StatusChange) =>
       withConflictLookup(client, { routeId }, () =>
         updateRouteStatus(identity.id, { id: routeId, _version: version }, status),
       ),

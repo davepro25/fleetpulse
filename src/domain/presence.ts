@@ -27,6 +27,7 @@ export function applyPresence(
   const id = message.dispatcherId;
   // Our own leave arrives after we reconnect (the old socket's close); we are never in the list.
   if (id === selfId) return roster;
+
   const peer = roster[id];
 
   switch (message.type) {
@@ -54,8 +55,10 @@ export function applyPresence(
 
     case 'dispatcher_left': {
       if (!peer) return roster;
+
       // A leave this soon after a join belongs to the connection before it (a ghost).
       if (peer.joinedAt !== null && now - peer.joinedAt < GHOST_GRACE_MS) return roster;
+
       const { [id]: _gone, ...rest } = roster;
       return rest;
     }

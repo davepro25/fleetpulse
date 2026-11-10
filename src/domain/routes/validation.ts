@@ -22,15 +22,28 @@ export function validateRouteForm(input: RouteFormInput, assignableIds: string[]
   const notes = input.notes.trim();
   const errors: RouteFormErrors = {};
 
-  if (!assignableIds.includes(input.truckId)) errors.truckId = 'Pick a truck that is free';
-  if (!destination) errors.destination = 'Destination is required';
-  else if (destination.length > DESTINATION_MAX)
-    errors.destination = `At most ${DESTINATION_MAX} characters`;
-  if (!(PRIORITIES as readonly string[]).includes(input.priority))
-    errors.priority = 'Pick a priority';
-  if (notes.length > NOTES_MAX) errors.notes = `At most ${NOTES_MAX} characters`;
+  if (!assignableIds.includes(input.truckId)) {
+    errors.truckId = 'Pick a truck that is free';
+  }
 
-  if (Object.keys(errors).length > 0) return { ok: false, errors };
+  if (!destination) {
+    errors.destination = 'Destination is required';
+  } else if (destination.length > DESTINATION_MAX) {
+    errors.destination = `At most ${DESTINATION_MAX} characters`;
+  }
+
+  if (!(PRIORITIES as readonly string[]).includes(input.priority)) {
+    errors.priority = 'Pick a priority';
+  }
+
+  if (notes.length > NOTES_MAX) {
+    errors.notes = `At most ${NOTES_MAX} characters`;
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return { ok: false, errors };
+  }
+
   return {
     ok: true,
     value: { truckId: input.truckId, destination, priority: input.priority, notes },

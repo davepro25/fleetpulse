@@ -77,6 +77,7 @@ function applyReadings(
 export function applySnapshot(fleet: FleetLive, snapshot: FleetSnapshot): FleetLive {
   const missing = snapshot.fleet.filter((truck) => !fleet[truck.id]);
   if (missing.length === 0) return fleet;
+
   const next: Record<string, TruckLive> = { ...fleet };
   for (const truck of missing) {
     const reading = { ...truck, truckId: truck.id, timestamp: snapshot.timestamp };
@@ -97,6 +98,7 @@ export function seedSamples(
 ): FleetLive {
   const truck = fleet[truckId];
   if (!truck) return fleet;
+
   const oldestLive = truck.samples[0]?.timestamp ?? Infinity;
   const older = history
     .filter((point) => point.timestamp < oldestLive)
@@ -107,6 +109,7 @@ export function seedSamples(
       fuel,
       engineTemp,
     }));
+
   if (older.length === 0) return fleet;
   return { ...fleet, [truckId]: { ...truck, samples: mergeByTimestamp(older, truck.samples) } };
 }
@@ -153,7 +156,12 @@ function newTruck(reading: TelemetryReading): TruckLive {
 function groupByTruck(readings: TelemetryReading[]): Map<string, TelemetryReading[]> {
   const groups = new Map<string, TelemetryReading[]>();
   for (const reading of readings) {
-    groups.set(reading.truckId, [...(groups.get(reading.truckId) ?? []), reading]);
+    const group = groups.get(reading.truckId);
+    if (group) {
+      group.push(reading);
+    } else {
+      groups.set(reading.truckId, [reading]);
+    }
   }
   return groups;
 }
