@@ -51,7 +51,7 @@ export function Dashboard({ identity, onSignOut }: Props) {
           }}
         />
 
-        <div className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_460px]">
+        <div className="grid min-h-0 flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_500px]">
           <div className="flex min-h-0 flex-col gap-3">
             <div className="relative h-[55vh] overflow-hidden rounded-lg ring-1 ring-slate-200 lg:h-auto lg:flex-1">
               <ErrorBoundary name="Map">

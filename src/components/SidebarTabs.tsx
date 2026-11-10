@@ -24,7 +24,8 @@ export function SidebarTabs({ tabs }: { tabs: Tab[] }) {
 
   return (
     <div className="flex min-h-0 flex-col rounded-lg bg-white ring-1 ring-slate-200">
-      <div role="tablist" className="m-3 mb-0 flex gap-1 rounded-lg bg-slate-100 p-1">
+      {/* Wraps instead of overflowing: five tabs plus counts can be wider than the sidebar. */}
+      <div role="tablist" className="m-3 mb-0 flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1">
         {tabs.map((tab, index) => {
           const selected = tab.id === active;
           return (
@@ -40,7 +41,7 @@ export function SidebarTabs({ tabs }: { tabs: Tab[] }) {
               tabIndex={selected ? 0 : -1}
               onClick={() => setActive(tab.id)}
               onKeyDown={(e) => onKeyDown(e, index)}
-              className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-indigo-600 ${
+              className={`flex flex-auto cursor-pointer items-center justify-center gap-1 whitespace-nowrap rounded-md px-1.5 py-1.5 text-[13px] font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-indigo-600 ${
                 selected
                   ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200'
                   : 'text-slate-600 hover:bg-white/60 hover:text-slate-900'
