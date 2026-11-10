@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { parseJson } from './json';
 
 // dispatcher_viewing carries only an id, so the readable name is encoded into it: "Dana~3f9a1c2e".
 
@@ -31,8 +30,11 @@ export function clearIdentity(): void {
 }
 
 export function loadIdentity(): Identity | null {
-  const saved = IdentitySchema.safeParse(parseJson(sessionStorage.getItem(STORAGE_KEY) ?? ''));
-  return saved.success ? saved.data : null;
+  try {
+    return IdentitySchema.parse(JSON.parse(sessionStorage.getItem(STORAGE_KEY) ?? ''));
+  } catch {
+    return null; // nothing saved yet, or edited by hand
+  }
 }
 
 export function displayName(dispatcherId: string): string {

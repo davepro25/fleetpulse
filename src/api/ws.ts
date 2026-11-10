@@ -2,7 +2,6 @@ import { WsInboundSchema, type WsInbound, type WsOutbound } from '../contracts';
 import { backoffMs } from './backoff';
 import { API } from './endpoints';
 import type { Identity } from '../utils/identity';
-import { parseJson } from '../utils/json';
 import type { StreamStatus } from './sse';
 
 const PING_INTERVAL_MS = 15_000;
@@ -93,17 +92,20 @@ export function openDispatcherSocket(
     };
 
     socket.onmessage = (event: MessageEvent<string>) => {
-      const parsed = WsInboundSchema.safeParse(parseJson(event.data));
-      if (!parsed.success) {
+      // Bad JSON and a wrong shape are the same case: drop the message, keep the socket.
+      let message: WsInbound;
+      try {
+        message = WsInboundSchema.parse(JSON.parse(event.data));
+      } catch {
         console.warn('Dropped invalid WS message', event.data);
         return;
       }
-      if (parsed.data.type === 'pong') {
+      if (message.type === 'pong') {
         clearTimeout(pongTimer);
         handlers.onRtt(Date.now() - pingSentAt);
         return;
       }
-      handlers.onMessage(parsed.data);
+      handlers.onMessage(message);
     };
 
     socket.onclose = scheduleReconnect;

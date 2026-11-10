@@ -1,7 +1,6 @@
 import { SseMessageSchema, type SseMessage } from '../contracts';
 import { backoffMs } from './backoff';
 import { API } from './endpoints';
-import { parseJson } from '../utils/json';
 
 export type StreamStatus = 'connecting' | 'open' | 'reconnecting';
 
@@ -34,9 +33,16 @@ export function openTelemetryStream(
     };
 
     es.onmessage = (event: MessageEvent<string>) => {
-      const parsed = SseMessageSchema.safeParse(parseJson(event.data));
-      if (parsed.success) handlers.onMessage(parsed.data);
-      else console.warn('Dropped invalid SSE frame', event.data);
+      // Bad JSON and a wrong shape are the same case: drop the frame, keep the stream.
+      let message: SseMessage;
+      try {
+        message = SseMessageSchema.parse(JSON.parse(event.data));
+      } catch {
+        console.warn('Dropped invalid SSE frame', event.data);
+        return;
+      }
+      // Outside the try, so a bug in a handler is not reported as a bad frame.
+      handlers.onMessage(message);
     };
 
     es.onerror = () => {
