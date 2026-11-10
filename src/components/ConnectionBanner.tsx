@@ -1,3 +1,4 @@
+import { CircuitOpenError, PROBE_AFTER_MS } from '../api/circuit';
 import { useNow } from '../hooks/useNow';
 import { useFleet } from '../queries/fleet';
 import { useConnectionStore } from '../stores/connectionStore';
@@ -13,7 +14,6 @@ interface Props {
 export function ConnectionBanner({ dispatcherName, onSignOut }: Props) {
   const { sse, ws, wsRttMs } = useConnectionStore();
   const lastTelemetryAt = useTelemetryStore((state) => state.lastTelemetryAt);
-  const fleet = useFleet();
   const now = useNow(1_000);
 
   const stale = isStale(lastTelemetryAt, now);
@@ -48,14 +48,7 @@ export function ConnectionBanner({ dispatcherName, onSignOut }: Props) {
           </Badge>
         )}
 
-        {fleet.isError && (
-          <span className="flex items-center gap-2">
-            <Badge tone="red" dot>
-              Truck list unavailable
-            </Badge>
-            <Button onClick={() => void fleet.refetch()}>Retry</Button>
-          </span>
-        )}
+        <FleetStatus />
       </div>
 
       <span className="ml-auto flex items-center gap-3 text-sm text-slate-600">
@@ -65,5 +58,30 @@ export function ConnectionBanner({ dispatcherName, onSignOut }: Props) {
         <Button onClick={onSignOut}>Sign out</Button>
       </span>
     </header>
+  );
+}
+
+/** Truck names come from REST; the live map keeps working from SSE whatever happens here. */
+function FleetStatus() {
+  const fleet = useFleet();
+
+  if (fleet.error instanceof CircuitOpenError) {
+    const since = fleet.dataUpdatedAt
+      ? new Date(fleet.dataUpdatedAt).toLocaleTimeString()
+      : 'never';
+    return (
+      <Badge tone="amber" dot>
+        Server overloaded: truck names from {since}, retrying every {PROBE_AFTER_MS / 1000}s
+      </Badge>
+    );
+  }
+  if (!fleet.isError) return null;
+  return (
+    <span className="flex items-center gap-2">
+      <Badge tone="red" dot>
+        Truck list unavailable
+      </Badge>
+      <Button onClick={() => void fleet.refetch()}>Retry</Button>
+    </span>
   );
 }

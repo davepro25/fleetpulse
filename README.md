@@ -117,6 +117,19 @@ The audit log covers only changes seen since the tab opened: the server has no r
 - Opening a truck fetches `GET /api/fleet/:id` (the only endpoint with mileage) and `GET /api/telemetry/history/:id?limit=150`. The history fills the three charts (speed, fuel, engine temp) at once; live readings extend them every 2 s, capped at 150 points (5 minutes).
 - The panel shows the truck's active route (from the routes cache) and lets the dispatcher send an alert (message 1–200 characters, severity info / warning / critical). Alerts from every dispatcher arrive over WS; the list covers alerts seen since the tab opened, because the server keeps none.
 
+## Bonus features
+
+Two of the seven, chosen because they extend the two quirks the assignment is built around.
+
+**Circuit breaker for `GET /api/fleet` (quirk 7).** ky retries a 503 after `Retry-After`. The breaker (`api/circuit.ts`, ky hooks on this one request) counts 503s per attempt, retries included: after three in a row it ends the request at once and refuses new ones for 15 s. The query keeps the last snapshot, and the banner says "Server overloaded: truck names from 12:03:04, retrying every 15s". The banner's query probes every 15 s while the circuit is open: a 200 closes it, a 503 opens it for another 15 s. A probe is one request, not four. Only 503 counts: a 502 means `server.js` is down, which the SSE and WS reconnects already cover. The map does not depend on this request, since positions come from SSE.
+
+**Sensor anomaly dashboard (quirks 2 and 3).** The Sensors tab lists every sensor fault since the tab opened, with the time, how long it lasted, the raw reading and the value shown instead. A per-truck summary separates the two cases a dispatcher must tell apart:
+
+- **Sensor glitch:** the readings came back on their own (the 0 % fuel blips, truck_7's 999 km/h). The truck is fine, though many glitches mean the sensor needs a check.
+- **Real fuel drop:** the low reading held past the 10 s confirm window. Call the driver.
+
+`domain/telemetry/anomalies.ts` builds the log by comparing each truck before and after a telemetry message. The detectors from Stage 3 are unchanged and know nothing about the log.
+
 ## What I'd monitor in production
 
 _Stage 8._

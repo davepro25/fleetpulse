@@ -10,11 +10,15 @@ import {
   type TruckDetail,
 } from '../contracts';
 import { BUFFER_CAP } from '../domain/telemetry/pipeline';
+import { circuitBreakerHooks } from './circuit';
 import { API, HEADER } from './endpoints';
 import { api } from './http';
 
+// Bonus: GET /api/fleet is the endpoint that answers 503 under load (quirk 7).
+const fleetCircuit = circuitBreakerHooks();
+
 export function fetchFleet(signal?: AbortSignal): Promise<FleetSnapshot> {
-  return api.get(API.fleet, { signal }).json(FleetSnapshotSchema);
+  return api.get(API.fleet, { signal, hooks: fleetCircuit }).json(FleetSnapshotSchema);
 }
 
 // The only endpoint with mileage.

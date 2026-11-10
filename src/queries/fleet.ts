@@ -1,4 +1,5 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
+import { CircuitOpenError, PROBE_AFTER_MS } from '../api/circuit';
 import { fetchFleet, fetchHistory, fetchTruckDetail } from '../api/fleet';
 import { QUERY_KEYS } from './keys';
 
@@ -8,8 +9,13 @@ const fleetQuery = queryOptions({
   queryFn: ({ signal }) => fetchFleet(signal),
 });
 
+/** The banner's subscription. It alone probes an open circuit, so other readers don't multiply probes. */
 export function useFleet() {
-  return useQuery(fleetQuery);
+  return useQuery({
+    ...fleetQuery,
+    refetchInterval: (query) =>
+      query.state.error instanceof CircuitOpenError ? PROBE_AFTER_MS : false,
+  });
 }
 
 /** id → display name. Telemetry has no names; until the snapshot loads, the id is shown. */

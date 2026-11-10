@@ -327,3 +327,19 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 - Sign-out clears the alert list too, like the audit log: both describe "since this tab connected".
 
 **Not applied:** `Map.groupBy` instead of `groupByTruck` (needs Node ≥ 22 in `engines`); re-seeding the charts when the truck reappears after `fleet_reset` (dev-only case).
+
+## Bonus: circuit breaker and anomaly dashboard
+
+**Prompt (summary):** Build the two recommended bonuses: a circuit breaker for `GET /api/fleet`, and a dashboard that separates real sensor problems from sensor bugs.
+
+**Output:** `api/circuit.ts` (ky hooks, `CircuitOpenError`), the probe interval in `useFleet`, the "Server overloaded" banner state; `domain/telemetry/anomalies.ts` (`trackAnomalies`), the anomaly log in the telemetry store, `components/anomalies/AnomalyLog.tsx` (Sensors tab). 1 circuit test replaces "gives up after 3 retries", plus 4 anomaly tests (48 total). Each was written first and seen failing.
+
+**Corrected during the build:**
+
+- The first breaker refused the 4th attempt in `beforeRetry`. The test hung: ky waits the full `Retry-After` (3 s) before calling `beforeRetry`, only to be refused. The check moved to `afterResponse`, which fails the request the moment the third 503 arrives.
+- Only the banner's `useFleet` gets the probe interval. Put on the shared query options, every `useTruckName` subscriber (rows, markers, options) would run its own timer.
+- `Map.groupBy` would have shortened the per-truck summary, but it is ES2024 and `engines` still allows Node 20, so a plain loop counts the outcomes.
+
+**Verified in the browser:** with `/api/fleet` forced to 503 in one tab, the app sent exactly 3 requests and showed "Server overloaded" with the cached names; a failed probe 15 s later sent 1 request; after restoring the server, the next probe cleared the banner. The Sensors tab collected 23 faults in about a minute: 0 % fuel glitches on many trucks (4–10 s each) and one 999 km/h on Truck Golf (10 s), all as sensor glitches.
+
+**Observed:** some fuel glitches lasted 8 s, because the server can start a new glitch right after one ends. The confirm window is 10 s, so the margin is thinner than the "4 s maximum" in `server.js` suggests; it goes into Known issues in Stage 8.

@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { AnomalyCount, AnomalyLog } from '../components/anomalies/AnomalyLog';
 import { ConnectionBanner } from '../components/ConnectionBanner';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { FleetMap } from '../components/fleet/FleetMap';
@@ -101,6 +102,16 @@ export function Dashboard({ identity, onSignOut }: Props) {
                   content: (
                     <ErrorBoundary name="Activity">
                       <AuditLog />
+                    </ErrorBoundary>
+                  ),
+                },
+                {
+                  id: 'anomalies',
+                  label: 'Sensors',
+                  count: <AnomalyCount />,
+                  content: (
+                    <ErrorBoundary name="Sensors">
+                      <AnomalyLog onSelect={setSelectedId} />
                     </ErrorBoundary>
                   ),
                 },

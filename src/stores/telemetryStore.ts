@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import type { HistorySample, SseGpsBatch, SseTelemetry, TruckStatus } from '../contracts';
+import { trackAnomalies, type SensorAnomaly } from '../domain/telemetry/anomalies';
 import {
   applyTelemetry,
   seedSamples,
@@ -15,6 +16,8 @@ interface TelemetryState {
   fleet: FleetLive;
   /** Client clock, for staleness: the server's timestamps are not comparable to ours. */
   lastTelemetryAt: number | null;
+  /** Bonus: every sensor fault since this tab connected, newest first. */
+  anomalies: SensorAnomaly[];
   ingest(message: SseTelemetry | SseGpsBatch, receivedAt: number): void;
   seed(truckId: string, history: HistorySample[]): void;
   reset(): void;
@@ -25,15 +28,20 @@ interface TelemetryState {
 export const useTelemetryStore = create<TelemetryState>((set) => ({
   fleet: {},
   lastTelemetryAt: null,
+  anomalies: [],
   ingest: (message, receivedAt) =>
-    set((state) => ({
-      fleet: applyTelemetry(state.fleet, message),
-      lastTelemetryAt: message.type === 'telemetry' ? receivedAt : state.lastTelemetryAt,
-    })),
+    set((state) => {
+      const fleet = applyTelemetry(state.fleet, message);
+      return {
+        fleet,
+        anomalies: trackAnomalies(state.anomalies, state.fleet, fleet),
+        lastTelemetryAt: message.type === 'telemetry' ? receivedAt : state.lastTelemetryAt,
+      };
+    }),
   seed: (truckId, history) =>
     set((state) => ({ fleet: seedSamples(state.fleet, truckId, history) })),
   // Keeps lastTelemetryAt: the stream itself did not stop.
-  reset: () => set({ fleet: {} }),
+  reset: () => set({ fleet: {}, anomalies: [] }),
 }));
 
 export function isStale(lastTelemetryAt: number | null, now: number): boolean {

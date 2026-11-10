@@ -688,4 +688,5 @@ Circuit breaker and every bonus feature · form library · router · CSS framewo
 
 - **Stage 6 as built:** the reducer is `domain/presence.ts` (`applyPresence`, roster as a plain object), the store is `stores/presenceStore.ts`, one `ViewerBadge` component; the socket gained `announceViewing()` so a reply-to-join also reports "no truck".
 - **Stage 7 as built:** history seeds only points older than the live samples (it overlaps them); alerts go to the list from the POST response and the WS echo, deduped by id; `mutationErrorMessage` moved to `mutations/errorMessage.ts` (two users now). Components live in `components/detail/`.
+- **Bonus scope changed after Stage 7:** two bonuses are built, the circuit breaker and the anomaly dashboard (README "Bonus features"). They extend quirks 7, 2 and 3, which the core already handles, so they show depth on the assignment's own problems. The other five stay out.
 - **Review after Stage 7:** `statusChangeBlockedReason` and `canTransition` removed (unreachable behind the version check); unused 409 body schemas removed.
