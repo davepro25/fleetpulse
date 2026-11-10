@@ -12,6 +12,7 @@ import { SidebarTabs } from '../components/SidebarTabs';
 import { Muted, Panel } from '../components/ui';
 import { SessionProvider, type Session } from '../context/SessionContext';
 import { startLive } from '../live';
+import { useAlertStore } from '../stores/alertStore';
 import { useAuditStore } from '../stores/auditStore';
 import type { Identity } from '../utils/identity';
 
@@ -42,8 +43,9 @@ export function Dashboard({ identity, onSignOut }: Props) {
         <ConnectionBanner
           dispatcherName={identity.name}
           onSignOut={() => {
-            // The log describes "since this tab connected" for the previous identity.
+            // Both lists describe "since this tab connected" for the previous identity.
             useAuditStore.getState().clear();
+            useAlertStore.getState().clear();
             onSignOut();
           }}
         />

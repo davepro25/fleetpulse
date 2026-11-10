@@ -7,7 +7,6 @@ import {
   isActive,
   nextStatuses,
   reassignBlockedReason,
-  statusChangeBlockedReason,
 } from '../../domain/routes/transitions';
 import { mutationErrorMessage } from '../../mutations/errorMessage';
 import { useReassignRoute, useUpdateRouteStatus } from '../../mutations/routes';
@@ -147,7 +146,9 @@ function blockedReason(
     const actor = lastActor(route);
     return `${displayName(actor.dispatcherId)} ${actor.action} this route while this was open. Cancel and review.`;
   }
+  // Same version means the route itself is unchanged, so a status change is still allowed.
+  // A reassign can still be blocked by other routes or trucks changing.
   return pending.type === 'status'
-    ? statusChangeBlockedReason(route, pending.to)
+    ? null
     : reassignBlockedReason(route, pending.truckId, statuses, routes);
 }

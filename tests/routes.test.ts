@@ -4,7 +4,7 @@ import type { Route, RouteStatus, TruckStatus } from '../src/contracts';
 import { conflictOwner } from '../src/domain/routes/conflicts';
 import {
   assignableTruckIds,
-  canTransition,
+  nextStatuses,
   reassignBlockedReason,
 } from '../src/domain/routes/transitions';
 import { validateRouteForm } from '../src/domain/routes/validation';
@@ -26,9 +26,7 @@ const statuses: Record<string, TruckStatus> = {
 describe('route rules', () => {
   it('allows only assigned → in-progress → completed, and cancel before completion', () => {
     const all: RouteStatus[] = ['assigned', 'in-progress', 'completed', 'cancelled'];
-    const allowed = all.flatMap((from) =>
-      all.filter((to) => canTransition(from, to)).map((to) => `${from}→${to}`),
-    );
+    const allowed = all.flatMap((from) => nextStatuses(from).map((to) => `${from}→${to}`));
 
     expect(allowed).toEqual([
       'assigned→in-progress',

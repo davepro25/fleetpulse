@@ -32,36 +32,6 @@ export interface CreateRouteRequest {
   notes?: string;
 }
 
-export interface UpdateRouteRequest {
-  status?: RouteStatus;
-  notes?: string;
-  priority?: string;
-}
-
-export interface ReassignRouteRequest {
-  newTruckId: string;
-}
-
-export const CreateConflictBodySchema = z.object({
-  error: z.string(),
-  currentRouteId: z.string(),
-  assignedBy: z.string().optional(),
-});
-
-// lastModifiedBy ignores reassignedBy (server.js line 300), so after a reassign it names the wrong person.
-export const VersionConflictBodySchema = z.object({
-  error: z.string(),
-  currentVersion: z.number(),
-  yourVersion: z.number(),
-  lastModifiedBy: z.string(),
-});
-
-// Sent after the PATCH delay (quirk 8). Carries no actor at all.
-export const ProcessingConflictBodySchema = z.object({
-  error: z.string(),
-  currentVersion: z.number(),
-});
-
 // Route events are broadcast to everyone, including the dispatcher who made the change.
 export const WsRouteAssignedSchema = z.object({
   type: z.literal('route_assigned'),

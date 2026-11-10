@@ -12,10 +12,6 @@ export function nextStatuses(from: RouteStatus): readonly RouteStatus[] {
   return NEXT_STATUS[from];
 }
 
-export function canTransition(from: RouteStatus, to: RouteStatus): boolean {
-  return NEXT_STATUS[from].includes(to);
-}
-
 export function isActive(route: Route): boolean {
   return route.status === 'assigned' || route.status === 'in-progress';
 }
@@ -33,10 +29,6 @@ export function assignableTruckIds(
   return Object.keys(statuses).filter(
     (id) => statuses[id] !== 'maintenance' && !activeRouteForTruck(routes, id),
   );
-}
-
-export function statusChangeBlockedReason(route: Route, to: RouteStatus): string | null {
-  return canTransition(route.status, to) ? null : `Route is already ${route.status}`;
 }
 
 // PUT /reassign has no If-Match and no status check on the server, so these checks are ours.

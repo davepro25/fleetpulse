@@ -313,3 +313,17 @@ Tool: Claude Code (Claude Opus). For each stage: what I asked, what the AI produ
 - `mutationErrorMessage` moved to `mutations/errorMessage.ts`: the alert form is its second user, so it no longer belongs to the routes file.
 
 **Verified in the browser:** charts full on open (5 minutes of history), then moving every 2 s; empty message → "Message is required"; my alert shown once; Eli's alert (second tab) appeared in my list, and the header showed "Eli" viewing the truck; a live fuel glitch on Alpha showed "Glitch?" and a gap in the fuel chart.
+
+- **Follow-up: fuel glitch at the 5 % floor.** Seen live in Stage 7: Truck Bravo showed 0 %. The server floors fuel at 5 %, so its 0 % glitch is a drop of exactly 5, and `checkFuel` accepted it (`raw >= trusted - 5`). The test fixture came from a truck above 80 %, so the edge never ran. Test first (failed with `value 0, fault null`), then `>=` became `>`. Below 5 % a glitch still looks like normal consumption: the threshold is in points, not relative (known limitation).
+
+## Review of the whole codebase (after Stage 7)
+
+**Prompt (summary):** Go over all the code and find what is unneeded or can be simpler.
+
+**Applied:**
+
+- Deleted five unused contracts (`UpdateRouteRequest`, `ReassignRouteRequest` and the three 409 body schemas). The 409 body is never read: who caused a conflict comes from refetched routes.
+- Deleted `statusChangeBlockedReason` and `canTransition`. The confirm dialog first checks the route version, and the server bumps it on every route change, so with the same version the status is the same and the chosen transition is still allowed: the check could never fail. The lifecycle test now uses `nextStatuses`.
+- Sign-out clears the alert list too, like the audit log: both describe "since this tab connected".
+
+**Not applied:** `Map.groupBy` instead of `groupByTruck` (needs Node ≥ 22 in `engines`); re-seeding the charts when the truck reappears after `fleet_reset` (dev-only case).
